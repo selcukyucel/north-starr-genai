@@ -1,0 +1,713 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VERSION="0.10.0"
+NORTH_STARR_GENAI_HOME="${NORTH_STARR_GENAI_HOME:-}"
+
+# Resolve where templates live
+resolve_template_dir() {
+  if [[ -n "$NORTH_STARR_GENAI_HOME" ]]; then
+    echo "$NORTH_STARR_GENAI_HOME/templates"
+    return
+  fi
+
+  # Check common install locations
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local parent_dir="$(dirname "$script_dir")"
+
+  if [[ -d "$parent_dir/templates" ]]; then
+    echo "$parent_dir/templates"
+    return
+  fi
+
+  # Homebrew cellar path
+  if [[ -d "/usr/local/share/north-starr-genai/templates" ]]; then
+    echo "/usr/local/share/north-starr-genai/templates"
+    return
+  fi
+
+  # Apple Silicon Homebrew
+  if [[ -d "/opt/homebrew/share/north-starr-genai/templates" ]]; then
+    echo "/opt/homebrew/share/north-starr-genai/templates"
+    return
+  fi
+
+  echo ""
+}
+
+# Resolve where skills live (root-level for plugin, or via templates)
+resolve_skills_dir() {
+  local template_dir="$1"
+  local parent_dir="$(dirname "$template_dir")"
+
+  # Root-level skills/ (plugin structure)
+  if [[ -d "$parent_dir/skills" ]]; then
+    echo "$parent_dir/skills"
+    return
+  fi
+
+  echo ""
+}
+
+# Resolve and validate target directory
+resolve_target_dir() {
+  local dir="${1:-.}"
+  if [[ ! -d "$dir" ]]; then
+    print_error "Directory does not exist: $dir" >&2
+    exit 1
+  fi
+  (cd "$dir" && pwd)
+}
+
+# Resolve template dir or exit with a clear error
+require_template_dir() {
+  local dir
+  dir="$(resolve_template_dir)"
+  if [[ -z "$dir" || ! -d "$dir" ]]; then
+    print_error "Could not find north-starr-genai templates." >&2
+    print_info "Set NORTH_STARR_GENAI_HOME to the north-starr-genai install directory." >&2
+    exit 1
+  fi
+  echo "$dir"
+}
+
+# Validate that copied skills have correct YAML frontmatter
+validate_skills() {
+  local skills_dir="$1"
+  for skill_file in "$skills_dir"/*/SKILL.md; do
+    [[ -f "$skill_file" ]] || continue
+    if ! head -1 "$skill_file" | grep -q '^---$'; then
+      print_warn "Missing YAML frontmatter: $(basename "$(dirname "$skill_file")")/SKILL.md"
+    elif ! grep -q '^name:' "$skill_file"; then
+      print_warn "Missing 'name' field: $(basename "$(dirname "$skill_file")")/SKILL.md"
+    fi
+  done
+}
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
+
+print_banner() {
+  echo ""
+  echo -e "${CYAN}    ★ ${BOLD}north-starr-genai${NC}"
+  echo -e "${DIM}    Your North Starr for AI Development${NC}"
+  echo -e "${DIM}    Inspired by Idea Flow — Janelle Arty Starr${NC}"
+  echo ""
+}
+
+print_success() {
+  echo -e "${GREEN}  ✓${NC} $1"
+}
+
+print_info() {
+  echo -e "${BLUE}  →${NC} $1"
+}
+
+print_warn() {
+  echo -e "${YELLOW}  !${NC} $1"
+}
+
+print_error() {
+  echo -e "${RED}  ✗${NC} $1"
+}
+
+# Check if a file is still the unmodified starter template (never customized)
+is_starter_template() {
+  local file="$1"
+  # Old starter templates (v2.3.x and earlier)
+  grep -q "Run \`/bootstrap\` to generate" "$file" 2>/dev/null && return 0
+  # New starter templates (v2.5+) — placeholder text not yet replaced
+  grep -q "\[One-sentence project description\]" "$file" 2>/dev/null && return 0
+  return 1
+}
+
+# ─── MANAGED SECTION INJECTION ─────────────────────────────────────────────────
+
+# Extract managed section names from a template file
+# Managed sections are marked with <!-- [NORTH-STARR-GENAI:name] --> ... <!-- [/NORTH-STARR-GENAI:name] -->
+get_managed_sections() {
+  local file="$1"
+  grep -o 'NORTH-STARR-GENAI:[a-z-]*' "$file" 2>/dev/null | grep -v '^/' | sed 's/NORTH-STARR-GENAI://' | sort -u
+}
+
+# Extract a managed section (including markers) from a file
+extract_section() {
+  local file="$1"
+  local section="$2"
+  awk -v section="$section" '
+    index($0, "NORTH-STARR-GENAI:" section "]") && !index($0, "/NORTH-STARR-GENAI:") { capture=1 }
+    capture { print }
+    index($0, "/NORTH-STARR-GENAI:" section "]") { capture=0 }
+  ' "$file"
+}
+
+# Inject missing managed sections from template into a customized target file
+# Updates existing sections to latest version. Appends missing ones at the end.
+inject_managed_sections() {
+  local target_file="$1"
+  local template_file="$2"
+  local file_name
+  file_name="$(basename "$target_file")"
+  local injected=false
+
+  for section in $(get_managed_sections "$template_file"); do
+    local new_content
+    new_content="$(extract_section "$template_file" "$section")"
+
+    if [[ -z "$new_content" ]]; then
+      continue
+    fi
+
+    if grep -q "NORTH-STARR-GENAI:${section}]" "$target_file" 2>/dev/null; then
+      # Section exists — replace in place with the latest version from template
+      local section_file="${target_file}.section"
+      printf '%s\n' "$new_content" > "$section_file"
+
+      awk -v section="$section" -v rfile="$section_file" '
+        index($0, "NORTH-STARR-GENAI:" section "]") && !index($0, "/NORTH-STARR-GENAI:") {
+          while ((getline line < rfile) > 0) print line
+          close(rfile)
+          skip=1
+          next
+        }
+        index($0, "/NORTH-STARR-GENAI:" section "]") { skip=0; next }
+        !skip { print }
+      ' "$target_file" > "${target_file}.tmp"
+
+      mv "${target_file}.tmp" "$target_file"
+      rm -f "$section_file"
+
+      print_success "Updated ${file_name} section: ${section}"
+      injected=true
+    else
+      # Section missing — check if the heading already exists (pre-marker file)
+      local section_heading
+      section_heading="$(printf '%s\n' "$new_content" | grep '^## ' | head -1)"
+
+      if [[ -n "$section_heading" ]] && grep -qF "$section_heading" "$target_file" 2>/dev/null; then
+        # Heading exists without markers — skip to avoid duplication
+        print_info "Skipped ${file_name} section: ${section} (heading exists without markers — run /bootstrap to update)"
+      else
+        # Truly new section — append it
+        printf '\n%s\n' "$new_content" >> "$target_file"
+        print_success "Added ${file_name} section: ${section}"
+      fi
+      injected=true
+    fi
+  done
+
+  if [[ "$injected" == "false" ]]; then
+    print_info "Skipped ${file_name} (customized — no new sections to inject)"
+  fi
+}
+
+# Reorder managed sections to appear right after the first heading + description.
+# This ensures "How to Approach Tasks" and "Auto Learn" are read before project context.
+reorder_managed_sections() {
+  local target_file="$1"
+  local template_file="$2"
+  local file_name
+  file_name="$(basename "$target_file")"
+
+  # Get the canonical order of managed sections from the template
+  local -a section_order=()
+  while IFS= read -r section; do
+    section_order+=("$section")
+  done < <(grep -o 'NORTH-STARR-GENAI:[a-z-]*\]' "$template_file" 2>/dev/null | grep -v '/' | sed 's/NORTH-STARR-GENAI://;s/\]//' | awk '!seen[$0]++')
+
+  if [[ ${#section_order[@]} -eq 0 ]]; then
+    return
+  fi
+
+  # Check if reordering is needed: managed sections should appear before
+  # any of these project context headings
+  local context_headings="^## (Tech Stack|Architecture|Grain|Module Map|Conventions)"
+  local first_context_line=0
+  local last_managed_line=0
+
+  first_context_line=$(grep -n -E "$context_headings" "$target_file" 2>/dev/null | head -1 | cut -d: -f1)
+  for section in "${section_order[@]}"; do
+    local line_num
+    line_num=$(grep -n "NORTH-STARR-GENAI:${section}]" "$target_file" 2>/dev/null | grep -v '/' | head -1 | cut -d: -f1)
+    if [[ -n "$line_num" ]] && [[ "$line_num" -gt "$last_managed_line" ]]; then
+      last_managed_line=$line_num
+    fi
+  done
+
+  # If no context headings found, or managed sections already before context, skip
+  if [[ "$first_context_line" -eq 0 ]] || [[ "$last_managed_line" -eq 0 ]]; then
+    return
+  fi
+  if [[ "$last_managed_line" -lt "$first_context_line" ]]; then
+    return
+  fi
+
+  # Reordering needed: extract managed sections, remove from current positions,
+  # re-insert before the first context heading
+  local -a managed_blocks=()
+  local temp_file="${target_file}.reorder"
+  cp "$target_file" "$temp_file"
+
+  # Extract each managed section and remove it from temp file
+  for section in "${section_order[@]}"; do
+    if grep -q "NORTH-STARR-GENAI:${section}]" "$temp_file" 2>/dev/null; then
+      local block
+      block="$(extract_section "$temp_file" "$section")"
+      managed_blocks+=("$block")
+
+      # Remove the managed section (and one blank line before it if present)
+      awk -v section="$section" '
+        index($0, "NORTH-STARR-GENAI:" section "]") && !index($0, "/NORTH-STARR-GENAI:") {
+          # Remove preceding blank line if present
+          if (prev_blank) { delete_prev=1 }
+          skip=1
+          next
+        }
+        index($0, "/NORTH-STARR-GENAI:" section "]") { skip=0; next }
+        skip { next }
+        /^[[:space:]]*$/ { prev_blank=1; prev_line=$0; next }
+        {
+          if (prev_blank && !delete_prev) { print prev_line }
+          prev_blank=0; delete_prev=0
+          print
+        }
+        END { if (prev_blank && !delete_prev) print prev_line }
+      ' "$temp_file" > "${temp_file}.2"
+      mv "${temp_file}.2" "$temp_file"
+    fi
+  done
+
+  if [[ ${#managed_blocks[@]} -eq 0 ]]; then
+    rm -f "$temp_file"
+    return
+  fi
+
+  # Find the insertion point: right before the first context heading
+  first_context_line=$(grep -n -E "$context_headings" "$temp_file" 2>/dev/null | head -1 | cut -d: -f1)
+
+  if [[ -z "$first_context_line" ]] || [[ "$first_context_line" -eq 0 ]]; then
+    # No context headings found after removal — append at end
+    for block in "${managed_blocks[@]}"; do
+      printf '\n%s\n' "$block" >> "$temp_file"
+    done
+  else
+    # Insert managed sections before the first context heading
+    local insert_line=$((first_context_line - 1))
+    {
+      head -n "$insert_line" "$temp_file"
+      for block in "${managed_blocks[@]}"; do
+        printf '\n%s\n'  "$block"
+      done
+      printf '\n'
+      tail -n "+${first_context_line}" "$temp_file"
+    } > "${temp_file}.final"
+    mv "${temp_file}.final" "$temp_file"
+  fi
+
+  mv "$temp_file" "$target_file"
+  print_success "Reordered ${file_name} sections (instructions before project context)"
+}
+
+# ─── INIT ──────────────────────────────────────────────────────────────────────
+
+cmd_init() {
+  local target_dir
+  target_dir="$(resolve_target_dir "${1:-}")"
+
+  print_banner
+
+  local template_dir
+  template_dir="$(require_template_dir)"
+
+  local skills_dir
+  skills_dir="$(resolve_skills_dir "$template_dir")"
+
+  echo -e "${BOLD}  Initializing North Starr GenAI in:${NC}"
+  echo -e "  ${DIM}$target_dir${NC}"
+  echo ""
+
+  # Check for existing files
+  if [[ -d "$target_dir/.github/skills" || -f "$target_dir/AGENTS.md" ]]; then
+    print_warn "Some North Starr GenAI files already exist."
+    echo ""
+    read -rp "  Overwrite existing files? [y/N] " confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+      echo ""
+      print_info "Use ${BOLD}north-starr-genai update${NC} to update skills without overwriting."
+      exit 0
+    fi
+    echo ""
+  fi
+
+  # Copy AGENTS.md (universal — works with any AI tool, always generated)
+  if [[ -f "$template_dir/AGENTS.md" ]]; then
+    cp "$template_dir/AGENTS.md" "$target_dir/AGENTS.md"
+    print_success "AGENTS.md — universal AI assistant instructions"
+  fi
+
+  # Copy skills to .github/skills/ (VS Code Copilot)
+  if [[ -n "$skills_dir" && -d "$skills_dir" ]]; then
+    mkdir -p "$target_dir/.github/skills"
+    cp -r "$skills_dir/"* "$target_dir/.github/skills/"
+    validate_skills "$target_dir/.github/skills"
+    print_success ".github/skills/ — VS Code Copilot skills"
+  fi
+
+  # Copy agents to .github/agents/ (VS Code Copilot)
+  if [[ -d "$template_dir/github/agents" ]]; then
+    mkdir -p "$target_dir/.github/agents"
+    for agent_file in "$template_dir/github/agents/"*.agent.md; do
+      [[ -f "$agent_file" ]] || continue
+      local agent_name
+      agent_name="$(basename "$agent_file")"
+      cp "$agent_file" "$target_dir/.github/agents/$agent_name"
+    done
+    print_success ".github/agents/ — VS Code Copilot agents"
+  fi
+
+  # Copy instructions template
+  if [[ -d "$template_dir/github/instructions" ]]; then
+    mkdir -p "$target_dir/.github/instructions"
+    for instruction_file in "$template_dir/github/instructions/"*; do
+      [[ -f "$instruction_file" ]] || continue
+      cp "$instruction_file" "$target_dir/.github/instructions/"
+    done
+    print_success ".github/instructions/ — pattern/landmine rule templates"
+  fi
+
+  echo ""
+  echo -e "${GREEN}${BOLD}  Done!${NC} North Starr GenAI initialized."
+  echo ""
+  echo -e "  ${BOLD}What's next:${NC}"
+  echo -e "  ${DIM}1.${NC} Open VS Code with GitHub Copilot"
+  echo -e "  ${DIM}2.${NC} Run ${CYAN}/bootstrap${NC} to generate project config from existing code"
+  echo -e "  ${DIM}3.${NC} Start working — your AI tool auto-loads the generated context"
+  echo ""
+  echo -e "  ${DIM}Available skills:${NC}"
+  echo -e "    /ai-invert             — Deep AI risk analysis before complex tasks"
+  echo -e "    /baseline              — Generate project baseline from existing code"
+  echo -e "    /cost-estimate         — Estimate AI development costs"
+  echo -e "    /bootstrap             — Generate project config from existing code"
+  echo -e "    /learn                 — Update config from experience"
+  echo -e "    /generate-commit        — Generate commit messages"
+  echo -e "    /generate-pr            — Generate PR descriptions"
+  echo ""
+  echo -e "  ${DIM}Agent (spawned automatically by /ai-invert):${NC}"
+  echo -e "    layoutplan             — Break complex tasks into persistent plans"
+  echo ""
+  echo -e "  ${DIM}For Claude Code users: install via the marketplace instead.${NC}"
+  echo -e "  ${DIM}Learn more: https://github.com/selcukyucel/north-starr-genai${NC}"
+  echo ""
+}
+
+# ─── UPDATE ────────────────────────────────────────────────────────────────────
+
+cmd_update() {
+  local target_dir
+  target_dir="$(resolve_target_dir "${1:-}")"
+
+  print_banner
+
+  local template_dir
+  template_dir="$(require_template_dir)"
+
+  local skills_dir
+  skills_dir="$(resolve_skills_dir "$template_dir")"
+
+  echo -e "${BOLD}  Updating North Starr GenAI in:${NC}"
+  echo -e "  ${DIM}$target_dir${NC}"
+  echo ""
+
+  # Update skills in .github/skills/
+  if [[ -n "$skills_dir" && -d "$skills_dir" ]]; then
+    mkdir -p "$target_dir/.github/skills"
+    cp -r "$skills_dir/"* "$target_dir/.github/skills/"
+    validate_skills "$target_dir/.github/skills"
+    print_success "Updated .github/skills/"
+  fi
+
+  # Update AGENTS.md if it's still the starter template (always — universal)
+  if [[ -f "$target_dir/AGENTS.md" ]] && is_starter_template "$target_dir/AGENTS.md"; then
+    cp "$template_dir/AGENTS.md" "$target_dir/AGENTS.md"
+    print_success "Updated AGENTS.md (starter template)"
+  elif [[ ! -f "$target_dir/AGENTS.md" ]]; then
+    cp "$template_dir/AGENTS.md" "$target_dir/AGENTS.md"
+    print_success "Created AGENTS.md (universal instructions)"
+  else
+    # Customized — update managed sections and fix ordering
+    inject_managed_sections "$target_dir/AGENTS.md" "$template_dir/AGENTS.md"
+    reorder_managed_sections "$target_dir/AGENTS.md" "$template_dir/AGENTS.md"
+  fi
+
+  # Update CLAUDE.md managed sections if it exists (for projects that had Claude Code configured)
+  if [[ -f "$target_dir/CLAUDE.md" ]] && ! is_starter_template "$target_dir/CLAUDE.md"; then
+    inject_managed_sections "$target_dir/CLAUDE.md" "$template_dir/AGENTS.md"
+    reorder_managed_sections "$target_dir/CLAUDE.md" "$template_dir/AGENTS.md"
+  fi
+
+  # Update agents in .github/agents/
+  if [[ -d "$template_dir/github/agents" ]]; then
+    mkdir -p "$target_dir/.github/agents"
+    local agents_updated=0
+    for agent_file in "$template_dir/github/agents/"*.agent.md; do
+      [[ -f "$agent_file" ]] || continue
+      local agent_name
+      agent_name="$(basename "$agent_file")"
+      cp "$agent_file" "$target_dir/.github/agents/$agent_name"
+      agents_updated=$((agents_updated + 1))
+    done
+    if [[ $agents_updated -gt 0 ]]; then
+      print_success "Updated .github/agents/ ($agents_updated agent(s))"
+    fi
+  fi
+
+  # Update instructions template
+  if [[ -d "$template_dir/github/instructions" ]]; then
+    mkdir -p "$target_dir/.github/instructions"
+    for instruction_file in "$template_dir/github/instructions/"_TEMPLATE*; do
+      [[ -f "$instruction_file" ]] || continue
+      cp "$instruction_file" "$target_dir/.github/instructions/"
+    done
+  fi
+
+  echo ""
+  echo -e "${GREEN}${BOLD}  Done!${NC} Skills updated to v${VERSION}."
+  echo -e "  ${DIM}Your rules, agents, and project config were preserved.${NC}"
+  echo ""
+}
+
+# ─── STATUS ────────────────────────────────────────────────────────────────────
+
+cmd_status() {
+  local target_dir
+  target_dir="$(resolve_target_dir "${1:-}")"
+
+  print_banner
+
+  echo -e "${BOLD}  Project status:${NC} ${DIM}$target_dir${NC}"
+  echo ""
+
+  local initialized=true
+  local bootstrapped=true
+
+  # Check AGENTS.md (universal)
+  if [[ -f "$target_dir/AGENTS.md" ]]; then
+    if is_starter_template "$target_dir/AGENTS.md"; then
+      print_success "AGENTS.md — starter (run /bootstrap to generate project config)"
+    else
+      print_success "AGENTS.md — project-specific"
+    fi
+  else
+    print_warn "AGENTS.md — missing"
+    initialized=false
+  fi
+
+  # Check VS Code Copilot skills
+  if [[ -d "$target_dir/.github/skills" ]]; then
+    local github_skill_count=$(find "$target_dir/.github/skills" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
+    print_success ".github/skills/ — ${github_skill_count} skills (VS Code Copilot)"
+  else
+    print_info ".github/skills/ — not installed"
+    initialized=false
+  fi
+
+  # Check VS Code Copilot agents
+  if [[ -d "$target_dir/.github/agents" ]]; then
+    local agent_count=$(find "$target_dir/.github/agents" -name "*.agent.md" 2>/dev/null | wc -l | tr -d ' ')
+    print_success ".github/agents/ — ${agent_count} agents"
+  fi
+
+  # Check VS Code Copilot instructions (created by bootstrap)
+  if [[ -f "$target_dir/.github/copilot-instructions.md" ]]; then
+    print_success ".github/copilot-instructions.md — Copilot instructions"
+  fi
+
+  if [[ -d "$target_dir/.github/instructions" ]]; then
+    local instruction_count=$(find "$target_dir/.github/instructions" -name "*.instructions.md" 2>/dev/null | wc -l | tr -d ' ')
+    if [[ "$instruction_count" -gt 0 ]]; then
+      print_success ".github/instructions/ — ${instruction_count} scoped rules"
+    fi
+  fi
+
+  # Check CLAUDE.md (might exist from previous Claude Code setup)
+  if [[ -f "$target_dir/CLAUDE.md" ]]; then
+    if is_starter_template "$target_dir/CLAUDE.md"; then
+      print_success "CLAUDE.md — starter"
+      bootstrapped=false
+    else
+      print_success "CLAUDE.md — project-specific"
+    fi
+  fi
+
+  # Check Claude Code rules (created by bootstrap)
+  if [[ -d "$target_dir/.claude/rules" ]]; then
+    local rule_count=$(find "$target_dir/.claude/rules" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+    print_success ".claude/rules/ — ${rule_count} rules"
+  else
+    bootstrapped=false
+  fi
+
+  # Check module-level CLAUDE.md files
+  local module_claude_count=$(find "$target_dir" -name "CLAUDE.md" -not -path "$target_dir/CLAUDE.md" -not -path "$target_dir/.claude/*" -not -path "*/node_modules/*" -not -path "*/.git/*" 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "$module_claude_count" -gt 0 ]]; then
+    print_success "Module CLAUDE.md — ${module_claude_count} files"
+  fi
+
+  echo ""
+
+  if [[ "$initialized" == "false" ]]; then
+    print_info "Run ${BOLD}north-starr-genai init${NC} to install North Starr GenAI."
+  elif [[ "$bootstrapped" == "false" ]]; then
+    echo -e "  ${YELLOW}${BOLD}Skills installed.${NC} Run ${CYAN}/bootstrap${NC} to generate config from existing code."
+  else
+    echo -e "  ${GREEN}${BOLD}North Starr GenAI is fully configured.${NC}"
+  fi
+  echo ""
+}
+
+# ─── CACHE-UPDATE ─────────────────────────────────────────────────────────────
+
+cmd_cache_update() {
+  print_banner
+
+  echo -e "${BOLD}  Updating Claude Code plugin cache...${NC}"
+  echo ""
+
+  local marketplace_dir="$HOME/.claude/plugins/marketplaces/north-starr-genai"
+  local cache_dir="$HOME/.claude/plugins/cache/north-starr-genai"
+
+  # Step 1: Update marketplace clone
+  if [[ -d "$marketplace_dir" ]]; then
+    cd "$marketplace_dir"
+    git fetch origin 2>/dev/null
+
+    local local_sha remote_sha
+    local_sha="$(git rev-parse HEAD 2>/dev/null)"
+    remote_sha="$(git rev-parse origin/main 2>/dev/null)"
+
+    if [[ "$local_sha" == "$remote_sha" ]]; then
+      print_success "Marketplace cache is already current"
+      local installed_version
+      installed_version="$(grep -o '"version": *"[^"]*"' .claude-plugin/marketplace.json 2>/dev/null | head -1 | sed 's/.*"version": *"//;s/"//')"
+      if [[ -n "$installed_version" ]]; then
+        print_info "Version: v${installed_version}"
+      fi
+      cd - > /dev/null
+      echo ""
+      return
+    fi
+
+    git reset --hard origin/main > /dev/null 2>&1
+    print_success "Marketplace cache updated"
+
+    local new_version
+    new_version="$(grep -o '"version": *"[^"]*"' .claude-plugin/marketplace.json 2>/dev/null | head -1 | sed 's/.*"version": *"//;s/"//')"
+    if [[ -n "$new_version" ]]; then
+      print_info "Version: v${new_version}"
+    fi
+
+    cd - > /dev/null
+  else
+    print_warn "Marketplace cache not found at $marketplace_dir"
+    print_info "Install the plugin first: /plugin install north-starr-genai"
+    echo ""
+    return 1
+  fi
+
+  # Step 2: Clear stale install cache
+  if [[ -d "$cache_dir" ]]; then
+    rm -rf "$cache_dir"
+    print_success "Cleared install cache"
+  else
+    print_info "No install cache to clear"
+  fi
+
+  echo ""
+  echo -e "${GREEN}${BOLD}  Done!${NC} Plugin cache updated."
+  echo -e "  ${DIM}Restart Claude Code or run /plugin install north-starr-genai to pick up the new version.${NC}"
+  echo -e "  ${DIM}Then run /sync in your project to update managed sections and agents.${NC}"
+  echo ""
+}
+
+# ─── HELP ──────────────────────────────────────────────────────────────────────
+
+cmd_help() {
+  print_banner
+  echo -e "${BOLD}  Usage:${NC} north-starr-genai <command> [directory]"
+  echo ""
+  echo -e "${BOLD}  Commands:${NC}"
+  echo -e "    ${CYAN}init${NC}           [dir]   Install North Starr GenAI skills in a project"
+  echo -e "    ${CYAN}update${NC}         [dir]   Update skills (preserves your config)"
+  echo -e "    ${CYAN}status${NC}         [dir]   Check setup status"
+  echo -e "    ${CYAN}cache-update${NC}           Refresh Claude Code plugin cache"
+  echo -e "    ${CYAN}help${NC}                   Show this help message"
+  echo -e "    ${CYAN}version${NC}                Show version"
+  echo ""
+  echo -e "${BOLD}  Distribution:${NC}"
+  echo -e "    VS Code Copilot → Install via Homebrew (this CLI)"
+  echo -e "    Claude Code     → Install via the marketplace"
+  echo ""
+  echo -e "${BOLD}  Examples:${NC}"
+  echo -e "    ${DIM}north-starr-genai init${NC}              # Initialize in current directory"
+  echo -e "    ${DIM}north-starr-genai init ~/my-project${NC}  # Initialize in specific directory"
+  echo -e "    ${DIM}north-starr-genai update${NC}             # Update to latest skills"
+  echo -e "    ${DIM}north-starr-genai status${NC}             # Check setup status"
+  echo ""
+  echo -e "${BOLD}  After init, use these skills in your AI tool:${NC}"
+  echo -e "    /ai-invert             — Deep AI risk analysis before complex tasks"
+  echo -e "    /baseline              — Generate project baseline from existing code"
+  echo -e "    /cost-estimate         — Estimate AI development costs"
+  echo -e "    /bootstrap             — Generate project config from existing code"
+  echo -e "    /learn                 — Update config from experience"
+  echo -e "    /generate-commit        — Generate commit messages"
+  echo -e "    /generate-pr            — Generate PR descriptions"
+  echo ""
+  echo -e "${BOLD}  Agent (spawned automatically by /ai-invert):${NC}"
+  echo -e "    layoutplan             — Break complex tasks into persistent plans"
+  echo ""
+  echo -e "  ${DIM}https://github.com/selcukyucel/north-starr-genai${NC}"
+  echo ""
+}
+
+# ─── MAIN ──────────────────────────────────────────────────────────────────────
+
+main() {
+  local command="${1:-help}"
+
+  case "$command" in
+    init)
+      cmd_init "${2:-}"
+      ;;
+    update)
+      cmd_update "${2:-}"
+      ;;
+    status)
+      cmd_status "${2:-}"
+      ;;
+    cache-update)
+      cmd_cache_update
+      ;;
+    help|--help|-h)
+      cmd_help
+      ;;
+    version|--version|-v)
+      echo "north-starr-genai v${VERSION}"
+      ;;
+    *)
+      print_error "Unknown command: $command"
+      echo ""
+      cmd_help
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

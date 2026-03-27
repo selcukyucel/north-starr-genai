@@ -1,0 +1,42 @@
+{
+  "name": "north-starr-genai",
+  "owner": {
+    "name": "Selcuk Yucel",
+    "email": ""
+  },
+  "metadata": {
+    "description": "Agentic AI development workflow for Claude Code — AI-specific skills, agents, and project context for teams building AI automations",
+    "version": "0.10.0"
+  },
+  "plugins": [
+    {
+      "name": "north-starr-genai",
+      "description": "Agentic AI development workflow for Claude Code — AI-specific skills, agents, and project context for teams building AI automations",
+      "source": "./",
+      "strict": true,
+      "skills": [
+        "./skills/bootstrap",
+        "./skills/ai-invert",
+        "./skills/invert",
+        "./skills/baseline",
+        "./skills/cost-estimate",
+        "./skills/learn",
+        "./skills/decompose",
+        "./skills/generate-commit",
+        "./skills/generate-pr",
+        "./skills/analyze-code",
+        "./skills/sync",
+        "./skills/report-weekly",
+        "./skills/autoimprove",
+        "./skills/eval-suite",
+        "./skills/prompt-test",
+        "./skills/guardrail-spec",
+        "./skills/deploy-checklist",
+        "./skills/incident-playbook",
+        "./skills/handoff-doc",
+        "./skills/prompt-version",
+        "./skills/orchestrate"
+      ]
+    }
+  ]
+}

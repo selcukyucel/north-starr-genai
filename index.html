@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>North Starr GenAI — Your North Starr for AI Development</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-deep: #06070d;
+  --bg-surface: #0c0e18;
+  --bg-card: #10132000;
+  --bg-card-solid: #10132a;
+  --accent: #6ee7b7;
+  --accent-dim: #6ee7b740;
+  --accent-glow: #6ee7b720;
+  --text: #e8eaf0;
+  --text-dim: #8890a8;
+  --text-muted: #4a5068;
+  --border: #1e2240;
+  --danger: #f87171;
+  --warn: #fbbf24;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Outfit', -apple-system, sans-serif;
+  --font-mono: 'DM Mono', 'SF Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 300;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ─── STAR FIELD ─── */
+#starfield {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  animation: twinkle var(--duration) ease-in-out infinite;
+  opacity: 0;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: var(--max-opacity); }
+}
+
+/* ─── LAYOUT ─── */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+section {
+  padding: 8rem 0;
+  position: relative;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 1.2rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(20px);
+  background: #06070d90;
+  border-bottom: 1px solid var(--border);
+}
+
+nav .logo {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+nav .logo span { color: var(--text-dim); font-style: italic; }
+
+nav .nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+nav .nav-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+nav .nav-links a:hover { color: var(--accent); }
+
+/* ─── HERO ─── */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding-top: 6rem;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin-bottom: 2.5rem;
+  background: var(--accent-glow);
+  animation: fadeUp 1s ease-out 0.2s both;
+}
+
+.hero-badge::before {
+  content: '★';
+  font-size: 0.65rem;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 8vw, 7rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.5rem;
+  animation: fadeUp 1s ease-out 0.4s both;
+}
+
+h1 em {
+  font-style: italic;
+  color: var(--accent);
+  position: relative;
+}
+
+h1 em::after {
+  content: '';
+  position: absolute;
+  bottom: 0.1em;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+.hero-sub {
+  font-size: 1.25rem;
+  color: var(--text-dim);
+  max-width: 600px;
+  margin-bottom: 3rem;
+  animation: fadeUp 1s ease-out 0.6s both;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 1rem;
+  animation: fadeUp 1s ease-out 0.8s both;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 2rem;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-decoration: none;
+  transition: all 0.3s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg-deep);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 30px var(--accent-dim);
+  transform: translateY(-2px);
+}
+
+.btn-ghost {
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  background: transparent;
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hero-stats {
+  display: flex;
+  gap: 3rem;
+  margin-top: 5rem;
+  animation: fadeUp 1s ease-out 1s both;
+}
+
+.hero-stat {
+  text-align: center;
+}
+
+.hero-stat .num {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--accent);
+}
+
+.hero-stat .label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ─── PROBLEM SECTION ─── */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 2rem;
+}
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 3rem;
+}
+
+.problem-card {
+  background: var(--bg-surface);
+  padding: 2rem;
+  transition: background 0.3s;
+}
+
+.problem-card:hover {
+  background: var(--bg-card-solid);
+}
+
+.problem-card .icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.problem-card h3 {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.problem-card p {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+/* ─── GATE SECTION ─── */
+.gate-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 2.5rem;
+}
+
+.gate-table th {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-align: left;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.gate-table td {
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.gate-table tr:hover td {
+  background: var(--accent-glow);
+}
+
+.gate-table .q-num {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-weight: 500;
+  width: 3rem;
+}
+
+.gate-table .q-why {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+/* ─── WORKFLOW / PIPELINE ─── */
+.pipeline {
+  display: flex;
+  gap: 0;
+  margin-top: 3rem;
+  position: relative;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+
+.pipeline::before {
+  content: '';
+  position: absolute;
+  top: 2.5rem;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--blue), var(--purple), var(--warn), var(--accent));
+  z-index: 0;
+}
+
+.phase {
+  flex: 1;
+  min-width: 180px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.phase-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-deep);
+  border: 2px solid var(--accent);
+  margin: 1.5rem auto;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.phase:nth-child(2) .phase-dot { border-color: var(--blue); }
+.phase:nth-child(3) .phase-dot { border-color: var(--purple); }
+.phase:nth-child(4) .phase-dot { border-color: var(--warn); }
+.phase:nth-child(5) .phase-dot { border-color: var(--accent); }
+
+.phase:hover .phase-dot {
+  transform: scale(1.5);
+  box-shadow: 0 0 20px var(--accent-dim);
+  background: var(--accent);
+}
+
+.phase-name {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.phase:nth-child(2) .phase-name { color: var(--blue); }
+.phase:nth-child(3) .phase-name { color: var(--purple); }
+.phase:nth-child(4) .phase-name { color: var(--warn); }
+.phase:nth-child(5) .phase-name { color: var(--accent); }
+
+.phase-desc {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  padding: 0 0.5rem;
+}
+
+.phase-agents {
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ─── CONSTELLATION / AGENT MAP ─── */
+#constellation {
+  background: var(--bg-surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 3rem;
+  margin-top: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+#constellation::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 50% 50%, var(--accent-glow) 0%, transparent 50%);
+  animation: constellationGlow 8s ease-in-out infinite;
+}
+
+@keyframes constellationGlow {
+  0%, 100% { transform: translate(0, 0); opacity: 0.3; }
+  50% { transform: translate(2%, -2%); opacity: 0.6; }
+}
+
+.constellation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.agent-node {
+  padding: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-deep);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: default;
+}
+
+.agent-node:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px var(--accent-glow);
+}
+
+.agent-node.orchestrator {
+  grid-column: 1 / -1;
+  text-align: center;
+  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent-glow), var(--bg-deep));
+}
+
+.agent-node .agent-category {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.agent-node .agent-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+}
+
+.agent-node .agent-role {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.agent-divider {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 0.5rem 0;
+}
+
+.agent-divider::before, .agent-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─── SKILLS SECTION ─── */
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.skill-card {
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  transition: all 0.3s;
+}
+
+.skill-card:hover {
+  border-color: var(--accent);
+  background: var(--bg-card-solid);
+}
+
+.skill-card .skill-name {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+
+.skill-card .skill-desc {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.skill-category {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ─── INSTALL SECTION ─── */
+.install-block {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.install-block h3 {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+.install-block code {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: var(--bg-deep);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  line-height: 1.8;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.install-block .step {
+  color: var(--text-muted);
+}
+
+/* ─── FEEDBACK LOOPS ─── */
+.feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.feedback-card {
+  padding: 1.5rem;
+  border-left: 3px solid var(--danger);
+  background: var(--bg-surface);
+  border-radius: 0 10px 10px 0;
+}
+
+.feedback-card:nth-child(2) { border-left-color: var(--warn); }
+.feedback-card:nth-child(3) { border-left-color: var(--blue); }
+.feedback-card:nth-child(4) { border-left-color: var(--purple); }
+
+.feedback-card .from-to {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.feedback-card .feedback-msg {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+/* ─── CTA SECTION ─── */
+#cta {
+  text-align: center;
+  padding: 10rem 0;
+}
+
+#cta h2 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+}
+
+#cta .hero-sub {
+  margin: 1.5rem auto 2.5rem;
+}
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .container { padding: 0 1.2rem; }
+  section { padding: 5rem 0; }
+  nav .nav-links { display: none; }
+  .hero-stats { flex-direction: column; gap: 1.5rem; }
+  .hero-cta { flex-direction: column; }
+  .pipeline { flex-direction: column; align-items: center; }
+  .pipeline::before { display: none; }
+  .constellation-grid { grid-template-columns: 1fr; }
+  .agent-node.orchestrator { grid-column: auto; }
+  .agent-divider { grid-column: auto; }
+  .problem-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="starfield"></div>
+
+<nav>
+  <div class="logo">North Starr <span>GenAI</span></div>
+  <ul class="nav-links">
+    <li><a href="#problem">What It Solves</a></li>
+    <li><a href="#gate">Gate</a></li>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#agents">Agents</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#install">Install</a></li>
+  </ul>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-badge">v0.10.0 — All 4 phases shipped</div>
+    <h1>Your North Starr<br>for <em>AI Development</em></h1>
+    <p class="hero-sub">You don't improve productivity by going faster — you improve it by improving <strong>control.</strong><br><br>14 agents and 21 skills that make AI development measurable, safe, and repeatable.</p>
+    <div class="hero-cta">
+      <a href="#install" class="btn btn-primary">Get Started</a>
+      <a href="https://github.com/selcukyucel/north-starr-genai" class="btn btn-ghost">GitHub →</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num">21</div><div class="label">Skills</div></div>
+      <div class="hero-stat"><div class="num">14</div><div class="label">Agents</div></div>
+      <div class="hero-stat"><div class="num">10</div><div class="label">Risk Dimensions</div></div>
+      <div class="hero-stat"><div class="num">5</div><div class="label">Phase Workflow</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WHAT IT SOLVES ─── -->
+<section id="problem">
+  <div class="container">
+    <div class="section-label reveal">What It Solves</div>
+    <h2 class="reveal">Every phase of AI development,<br>covered by the right agent.</h2>
+    <p class="reveal" style="color: var(--text-dim); max-width: 650px;">Building AI automations means managing prompts, models, pipelines, costs, safety, and client delivery — all at once. North Starr GenAI gives each concern a dedicated agent and wires them into a single workflow.</p>
+    <div class="problem-grid reveal">
+      <div class="problem-card">
+        <div class="icon">🛡️</div>
+        <h3>Risk Before Code</h3>
+        <p>10-dimension inversion analysis catches prompt fragility, hallucination risk, cost at scale, and compliance gaps — before you write a line.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">📏</div>
+        <h3>Baselines Before Changes</h3>
+        <p>Capture accuracy, latency, token usage, and cost with reproducible methods. Know exactly what changed after every prompt tweak.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">🤖</div>
+        <h3>Specialist Agents Auto-Spawn</h3>
+        <p>Prompt work? prompt-engineer spawns. RAG changes? rag-advisor spawns. No manual invocation — the workflow drives the agents.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">✅</div>
+        <h3>Eval + Guardrails Auto-Validate</h3>
+        <p>Every change runs through eval-designer and guardrails-designer before it ships. Both must pass. Failures route back to the right agent.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">💰</div>
+        <h3>Cost as a First-Class Concern</h3>
+        <p>Per-component token breakdown. Cost delta for changes. Budget pool tracking across stories. No more surprise bills at scale.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">🧠</div>
+        <h3>Knowledge Survives Sessions</h3>
+        <p>Prompt patterns, model quirks, cost optimizations, and architecture decisions accumulate in LEARNINGS.md and DECISIONS.md — never lost.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── AI COMPLEXITY GATE ─── -->
+<section id="gate">
+  <div class="container">
+    <div class="section-label reveal">The AI Complexity Gate</div>
+    <h2 class="reveal">Five questions before<br>every change.</h2>
+    <p class="reveal" style="color: var(--text-dim); max-width: 600px;">The gate fires automatically. Based on your answers, it routes work through the right workflow — baselines, risk analysis, cost estimation, or full orchestration.</p>
+    <table class="gate-table reveal">
+      <thead>
+        <tr><th>Q</th><th>Question</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="q-num">Q0</td><td>Is current behavior covered by evals?</td><td class="q-why">Eval-first discipline</td></tr>
+        <tr><td class="q-num">Q1</td><td>Does this touch a production prompt or model config?</td><td class="q-why">Prompt changes are high-risk</td></tr>
+        <tr><td class="q-num">Q2</td><td>Does this change what data the model sees?</td><td class="q-why">Data changes alter model behavior</td></tr>
+        <tr><td class="q-num">Q3</td><td>Does this affect a client-facing output?</td><td class="q-why">Client-visible changes need baselines</td></tr>
+        <tr><td class="q-num">Q4</td><td>Could this change cost at scale?</td><td class="q-why">Cost is a first-class concern</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── PIPELINE ─── -->
+<section id="pipeline">
+  <div class="container">
+    <div class="section-label reveal">The 5-Phase Workflow</div>
+    <h2 class="reveal">Gate → Build → Harden →<br>Complete → Learn</h2>
+    <p class="reveal" style="color: var(--text-dim); max-width: 600px;">Specialist agents auto-spawn during BUILD. Validators auto-run during HARDEN. No manual invocation needed — the workflow in CLAUDE.md drives everything.</p>
+    <div class="pipeline reveal">
+      <div class="phase">
+        <div class="phase-name">Assess</div>
+        <div class="phase-dot"></div>
+        <div class="phase-desc">Gate fires. Baseline captured. Risk analysis via /ai-invert.</div>
+        <div class="phase-agents">layoutplan</div>
+      </div>
+      <div class="phase">
+        <div class="phase-name">Build</div>
+        <div class="phase-dot"></div>
+        <div class="phase-desc">Specialists spawn based on plan content. Tests written first.</div>
+        <div class="phase-agents">prompt-engineer · rag-advisor · integration-planner</div>
+      </div>
+      <div class="phase">
+        <div class="phase-name">Harden</div>
+        <div class="phase-dot"></div>
+        <div class="phase-desc">Eval + guardrails auto-validate. Both must pass to proceed.</div>
+        <div class="phase-agents">eval-designer · guardrails-designer</div>
+      </div>
+      <div class="phase">
+        <div class="phase-name">Complete</div>
+        <div class="phase-dot"></div>
+        <div class="phase-desc">Summary with files modified, eval scores, guardrail status.</div>
+        <div class="phase-agents">commit · PR · done</div>
+      </div>
+      <div class="phase">
+        <div class="phase-name">Learn</div>
+        <div class="phase-dot"></div>
+        <div class="phase-desc">Capture prompt patterns, model quirks, cost insights.</div>
+        <div class="phase-agents">/learn</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 5rem;">
+      <div class="section-label reveal">Feedback Loops</div>
+      <h2 class="reveal" style="font-size: 2rem;">Failures route back<br>to the right agent.</h2>
+      <div class="feedback-grid reveal">
+        <div class="feedback-card">
+          <div class="from-to">eval-designer → prompt-engineer</div>
+          <div class="feedback-msg">"Fix the prompt"</div>
+        </div>
+        <div class="feedback-card">
+          <div class="from-to">guardrails-designer → ai-architect</div>
+          <div class="feedback-msg">"Fix the design"</div>
+        </div>
+        <div class="feedback-card">
+          <div class="from-to">cost-estimator → ai-architect</div>
+          <div class="feedback-msg">"Reduce cost"</div>
+        </div>
+        <div class="feedback-card">
+          <div class="from-to">same gate fails twice → HUMAN</div>
+          <div class="feedback-msg">"Your call"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── AGENTS ─── -->
+<section id="agents">
+  <div class="container">
+    <div class="section-label reveal">14 Specialized Agents</div>
+    <h2 class="reveal">A constellation of agents,<br>orchestrated as a DAG.</h2>
+    <p class="reveal" style="color: var(--text-dim); max-width: 600px;">Sequential where order matters. Parallel where it doesn't. The orchestrator manages state, conflicts, SLAs, and human escalation across all of them.</p>
+
+    <div id="constellation" class="reveal">
+      <div class="constellation-grid">
+        <div class="agent-node orchestrator">
+          <div class="agent-category">Command</div>
+          <div class="agent-name">★ orchestrator</div>
+          <div class="agent-role">Pipeline state machine — routes stories through the full DAG</div>
+        </div>
+
+        <div class="agent-divider">▼ Triage &amp; Design (sequential)</div>
+
+        <div class="agent-node">
+          <div class="agent-category">Triage</div>
+          <div class="agent-name">chief-ai-po</div>
+          <div class="agent-role">Refine stories with AI acceptance criteria</div>
+        </div>
+        <div class="agent-node">
+          <div class="agent-category">Design</div>
+          <div class="agent-name">ai-architect</div>
+          <div class="agent-role">Technical design, model selection, ADRs</div>
+        </div>
+        <div class="agent-node">
+          <div class="agent-category">Budget</div>
+          <div class="agent-name">cost-estimator</div>
+          <div class="agent-role">Cost projection and budget pool checks</div>
+        </div>
+
+        <div class="agent-divider">▼ Plan</div>
+
+        <div class="agent-node" style="grid-column: 1 / -1; text-align: center;">
+          <div class="agent-category">Plan</div>
+          <div class="agent-name">layoutplan</div>
+          <div class="agent-role">Break inversion analysis into session-surviving implementation plans</div>
+        </div>
+
+        <div class="agent-divider">▼ Build (parallel)</div>
+
+        <div class="agent-node">
+          <div class="agent-category">Build</div>
+          <div class="agent-name">prompt-engineer</div>
+          <div class="agent-role">Design prompts, version, eval handoff</div>
+        </div>
+        <div class="agent-node">
+          <div class="agent-category">Build</div>
+          <div class="agent-name">rag-advisor</div>
+          <div class="agent-role">Chunking, embeddings, retrieval, re-ranking</div>
+        </div>
+        <div class="agent-node">
+          <div class="agent-category">Build</div>
+          <div class="agent-name">integration-planner</div>
+          <div class="agent-role">API contracts, retry strategies, auth</div>
+        </div>
+
+        <div class="agent-divider">▼ Harden (parallel)</div>
+
+        <div class="agent-node">
+          <div class="agent-category">Validate</div>
+          <div class="agent-name">eval-designer</div>
+          <div class="agent-role">Run evals, score against rubrics</div>
+        </div>
+        <div class="agent-node">
+          <div class="agent-category">Validate</div>
+          <div class="agent-name">guardrails-designer</div>
+          <div class="agent-role">Test safety, PII, injection defenses</div>
+        </div>
+        <div class="agent-node">
+          <div class="agent-category">Validate</div>
+          <div class="agent-name">ai-ops</div>
+          <div class="agent-role">Monitoring, alerting, drift detection</div>
+        </div>
+
+        <div class="agent-node" style="grid-column: 2 / 3; text-align: center;">
+          <div class="agent-category">Red Team</div>
+          <div class="agent-name">prompt-adversary</div>
+          <div class="agent-role">Chained attacks, targeted vulnerabilities</div>
+        </div>
+
+        <div class="agent-divider">▼ Deliver</div>
+
+        <div class="agent-node" style="grid-column: 1 / -1; text-align: center;">
+          <div class="agent-category">Deliver</div>
+          <div class="agent-name">demo-builder</div>
+          <div class="agent-role">Package deliverables, handoff docs, client acceptance gate</div>
+        </div>
+
+        <div class="agent-node" style="grid-column: 1 / -1; text-align: center; border: none; background: transparent; padding: 0.5rem;">
+          <div class="agent-category">Decomposition</div>
+          <div class="agent-name" style="color: var(--text-dim);">+ storymap</div>
+          <div class="agent-role">PRD decomposition (spawned by /decompose)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SKILLS ─── -->
+<section id="skills">
+  <div class="container">
+    <div class="section-label reveal">21 Skills</div>
+    <h2 class="reveal">Every skill optimized<br>via autoimprove.</h2>
+    <p class="reveal" style="color: var(--text-dim); max-width: 600px;">49 improvements applied across 16 targets, 0 reverted. Each skill was scored against a 6-criterion checklist and iteratively tightened until it hit 100%.</p>
+
+    <div class="skill-category reveal">Core Workflow</div>
+    <div class="skills-grid reveal">
+      <div class="skill-card"><div class="skill-name">/bootstrap</div><div class="skill-desc">Detect AI stack, generate rules, install all 14 agents. AI architecture guidance built in.</div></div>
+      <div class="skill-card"><div class="skill-name">/ai-invert</div><div class="skill-desc">10-dimension risk analysis. Classifies NEW vs PRE-EXISTING risks. Per-risk eval strategy.</div></div>
+      <div class="skill-card"><div class="skill-name">/baseline</div><div class="skill-desc">Capture performance with specific methods, regression thresholds, and reproduction steps.</div></div>
+      <div class="skill-card"><div class="skill-name">/cost-estimate</div><div class="skill-desc">Per-component token breakdown. Cost delta for changes. Model comparison at 1x/10x/100x.</div></div>
+      <div class="skill-card"><div class="skill-name">/orchestrate</div><div class="skill-desc">Start the multi-story pipeline. Budget preview. Resume from prior sessions.</div></div>
+    </div>
+
+    <div class="skill-category reveal">Evaluation &amp; Safety</div>
+    <div class="skills-grid reveal">
+      <div class="skill-card"><div class="skill-name">/eval-suite</div><div class="skill-desc">Golden examples, tailored adversarial inputs, regression anchors with match types.</div></div>
+      <div class="skill-card"><div class="skill-name">/prompt-test</div><div class="skill-desc">Non-deterministic handling. Regression deltas. Failure-pattern-specific fix suggestions.</div></div>
+      <div class="skill-card"><div class="skill-name">/guardrail-spec</div><div class="skill-desc">Pipeline-stage scoped. False positive estimation. Testable acceptance criteria.</div></div>
+    </div>
+
+    <div class="skill-category reveal">Agency Operations</div>
+    <div class="skills-grid reveal">
+      <div class="skill-card"><div class="skill-name">/deploy-checklist</div><div class="skill-desc">Risk mitigation mapping from /ai-invert. Staging/prod diff. Alert routing verification.</div></div>
+      <div class="skill-card"><div class="skill-name">/incident-playbook</div><div class="skill-desc">9 incident categories. Escalation chains. Time-to-detect. Runnable detection commands.</div></div>
+      <div class="skill-card"><div class="skill-name">/handoff-doc</div><div class="skill-desc">Client documentation. SLA numbers from artifacts. Prompt safety rationale.</div></div>
+      <div class="skill-card"><div class="skill-name">/prompt-version</div><div class="skill-desc">Diffs, eval scores, rollback, change magnitude classification.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── INSTALL ─── -->
+<section id="install">
+  <div class="container">
+    <div class="section-label reveal">Get Started</div>
+    <h2 class="reveal">Two commands to<br>your North Starr.</h2>
+
+    <div class="install-block reveal">
+      <h3>Claude Code (recommended)</h3>
+      <code><span class="step"># Install the plugin</span>
+/plugin marketplace add selcukyucel/north-starr-genai
+/plugin install north-starr-genai
+
+<span class="step"># Bootstrap your AI project</span>
+/bootstrap</code>
+    </div>
+
+    <div class="install-block reveal" style="margin-top: 1rem;">
+      <h3>VS Code Copilot (Homebrew)</h3>
+      <code><span class="step"># Tap and install</span>
+brew tap selcukyucel/north-starr-genai
+brew install north-starr-genai
+
+<span class="step"># Initialize and bootstrap</span>
+cd your-project && north-starr-genai init
+/bootstrap</code>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ─── -->
+<section id="cta">
+  <div class="container">
+    <h2 class="reveal">Ship AI that you<br>can <em>measure.</em></h2>
+    <p class="hero-sub reveal">Every prompt change baselined. Every risk analyzed.<br>Every output evaluated. Every deployment verified.</p>
+    <div class="hero-cta reveal" style="justify-content: center;">
+      <a href="#install" class="btn btn-primary">Get Started →</a>
+      <a href="https://github.com/selcukyucel/north-starr-genai" class="btn btn-ghost">Star on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>North Starr GenAI — by <a href="https://github.com/selcukyucel">Selcuk Yucel</a> · MIT License · Inspired by <em>Idea Flow</em> — Janelle Arty Starr</p>
+  </div>
+</footer>
+
+<script>
+// ─── Star Field ───
+(function() {
+  const field = document.getElementById('starfield');
+  const count = 200;
+  for (let i = 0; i < count; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 2 + 0.5;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.setProperty('--duration', (Math.random() * 4 + 2) + 's');
+    star.style.setProperty('--max-opacity', Math.random() * 0.6 + 0.2);
+    star.style.animationDelay = Math.random() * 4 + 's';
+    field.appendChild(star);
+  }
+})();
+
+// ─── Scroll Reveal ───
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ─── Smooth nav highlighting ───
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav .nav-links a');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => {
+    const sectionTop = section.offsetTop - 200;
+    if (scrollY >= sectionTop) current = section.getAttribute('id');
+  });
+  navLinks.forEach(link => {
+    link.style.color = link.getAttribute('href') === '#' + current ? '#6ee7b7' : '';
+  });
+});
+</script>
+
+</body>
+</html>
