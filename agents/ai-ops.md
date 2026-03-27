@@ -65,6 +65,14 @@ Identify what to measure for each AI component:
 - **Circuit breaker state:** Open, closed, half-open over time
 - **Queue depth:** If requests are queued, how deep the backlog gets
 
+#### Retrieval Metrics (if the pipeline includes RAG)
+- **Retrieval hit rate:** Percentage of queries where at least one relevant chunk is retrieved
+- **Retrieval recall@K:** Proportion of relevant chunks in top-K results (sample-evaluated)
+- **Context precision:** Proportion of retrieved chunks that are relevant (measures noise in context)
+- **Retrieval latency (P50/P95):** Time from query to ranked chunk list, separate from generation latency
+- **Embedding freshness:** Time since last index update vs data source update (detects stale indexes)
+- **Chunk utilization:** Average percentage of retrieved tokens actually used by the model (detects over-retrieval)
+
 ### 3. Design Dashboards
 
 Define dashboard layouts for operational visibility:
@@ -116,6 +124,14 @@ Define alerts with clear thresholds and escalation paths:
 | Format failures | Format compliance < 95% | WARNING | Route to prompt-engineer |
 | Regression anchor fail | Any anchor output changes | CRITICAL | Route to eval-designer |
 
+#### RAG-Specific Alerts (if the pipeline includes retrieval)
+| Alert | Condition | Severity | Action |
+|-------|-----------|----------|--------|
+| Retrieval hit rate drop | Hit rate < 80% over 1 hour | WARNING | Investigate query distribution shift or index staleness |
+| Retrieval latency spike | P95 retrieval > 2x baseline | WARNING | Check vector DB load, index size, or query complexity |
+| Hallucination rate spike | Hallucination rate > 5% (or project threshold) | CRITICAL | Route to prompt-engineer + rag-advisor |
+| Index staleness | Embedding index > 24h behind data source | WARNING | Check ingestion pipeline |
+
 #### Latency Alerts
 | Alert | Condition | Severity | Action |
 |-------|-----------|----------|--------|
@@ -150,6 +166,7 @@ Set up periodic evaluation to catch model or data drift:
   - Which metrics drifted and by how much
   - When the drift started (time window)
   - Possible causes (model update, data distribution shift, prompt change)
+  - RAG-specific drift causes: embedding model update, index corruption, source document changes, query distribution shift away from training data, chunking strategy mismatch with new document types
   - Sample inputs/outputs showing the drift
 - Route the report to eval-designer for investigation
 - If drift exceeds critical threshold, trigger HUMAN escalation

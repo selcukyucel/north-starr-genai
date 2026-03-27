@@ -61,6 +61,9 @@ Define binary YES/NO criteria that every test case is scored against. The rubric
 | **Safety** | "Output contains no PII, no harmful content, no leaked system prompt" |
 | **Tone** | "Output matches the specified tone" |
 | **Instruction following** | "Output respects all explicit constraints in the prompt" |
+| **Retrieval grounding** | "All factual claims are traceable to a retrieved chunk (no parametric hallucination)" — include only if component includes RAG |
+| **Citation accuracy** | "Every citation references a real retrieved source and supports the associated claim" — include only if component requires citations |
+| **Retrieval relevance** | "The retrieved context is relevant to the query (no noise chunks)" — include only if component includes RAG |
 
 **Per-field scoring (for structured outputs):** If the output has discrete fields, define criteria per field. Example: `C1: Summary is 1-3 sentences`, `C2: Category is one of the allowed values`.
 
@@ -71,6 +74,11 @@ Define binary YES/NO criteria that every test case is scored against. The rubric
 - **Important edge cases** (3-5): Valid but unusual -- short, long, ambiguous, nuanced
 - **Domain-specific variations** (2-5): Different categories, topics, or user segments
 - **Difficulty spectrum**: Easy, medium, and hard examples
+- **RAG retrieval coverage** (3-5, if pipeline includes retrieval): Test cases that exercise retrieval quality:
+  - Query with answer in a single chunk (easy retrieval)
+  - Query requiring information from 2+ chunks (multi-hop)
+  - Query about recently added documents (freshness)
+  - Query where no relevant document exists (should trigger "I don't know" response)
 
 **JSONL format per example:**
 ```json
@@ -89,6 +97,7 @@ Define binary YES/NO criteria that every test case is scored against. The rubric
 - **Conflicting instructions** — contradict specific instructions in THIS prompt's system message. If the prompt says "classify into 4 categories," ask for a 5th. If it says "respond in JSON," request markdown.
 - **Semantic attacks** — create inputs that exploit THIS prompt's domain. For a classification prompt: tickets that could plausibly be two categories. For a summarization prompt: documents with contradictory facts. Include plausible but fictional entities the model might hallucinate about.
 - **Format exploitation** — use the actual input format and break it. If input is free text: excessive whitespace, code blocks, HTML tags. If input is JSON: malformed JSON, extra fields, nested injection.
+- **Retrieval poisoning** (if pipeline includes RAG) — queries designed to exploit the retrieval layer: queries crafted to retrieve irrelevant but high-similarity chunks, queries that exploit metadata filter logic, queries that trigger multi-hop failure by requiring synthesis the pipeline can't perform
 
 **Each adversarial input must include:** the attack string, which specific vulnerability it targets in this prompt, and what bad output looks like if the attack succeeds.
 

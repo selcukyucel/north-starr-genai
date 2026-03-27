@@ -54,6 +54,12 @@ Build the prompt using the appropriate pattern for the task:
 - **Structured output** — when downstream systems parse the output. Define exact JSON schema or delimited format
 - **Self-consistency** — when accuracy is critical and cost permits. Generate multiple completions, select majority
 - **Decomposition** — when the task is too complex for a single prompt. Break into chained prompts with clear handoffs
+- **RAG-grounded generation** — when the prompt receives retrieved context and must answer only from it. Key elements:
+  - Explicit grounding instruction: "Answer ONLY based on the provided context. If the context doesn't contain the answer, say so."
+  - Citation format: define how to cite sources (e.g., `[Source: <document_name>, p.<page>]`)
+  - Refusal behavior: "If retrieved context is empty or irrelevant, respond: 'I don't have enough information to answer this question.' Do not guess."
+  - Context placement: place retrieved chunks before the user query, with clear delimiters between chunks
+  - Coordinate with rag-advisor on context injection format (see `.plans/RAG-<name>.md`)
 
 #### Prompt Structure
 Every prompt must include:
@@ -171,6 +177,7 @@ When iterating based on eval results:
   - **Hallucination failures** — add grounding instructions, restrict to provided context
   - **Edge case failures** — add explicit handling for the failing input category
   - **Injection failures** — strengthen instruction hierarchy, add input sanitization notes
+  - **RAG grounding failures** — model ignores retrieved context or fabricates beyond it. Add explicit "use ONLY the following context" instruction, require numbered citations for each claim, add confidence-gated refusal ("If you are not confident the context supports this answer, say 'I'm not sure based on the available information'")
 - Make targeted changes — do not rewrite the entire prompt for a narrow failure
 - Document what changed and why in the version header
 - Note the eval score gap to close (e.g., "adversarial category: 40% -> target 80%")

@@ -69,11 +69,30 @@ Generate four categories of test cases:
 
 **Regression anchors (3-5):** Critical outputs that must not change between versions. These are "golden" outputs where any deviation is a regression.
 
+#### RAG-Specific Evaluation (if the pipeline includes retrieval)
+
+If evaluating a RAG pipeline, add these criteria to the rubric:
+
+**Retrieval quality criteria:**
+- **Retrieval Recall:** "At least one retrieved chunk contains the answer" (YES/NO)
+- **Context Precision:** "The majority of retrieved chunks are relevant to the query" (YES/NO)
+- **No Hallucination Beyond Context:** "All factual claims in the output are supported by retrieved chunks" (YES/NO)
+
+**RAG-specific test cases to add:**
+- **Adversarial retrieval (3-5):** Queries where retrieval is likely to fail — ambiguous queries, queries using different terminology than the corpus, multi-hop questions requiring facts from multiple documents
+- **Grounding tests (3-5):** Queries where the model might ignore retrieved context and hallucinate from parametric knowledge — test with questions about domain-specific facts that contradict common knowledge
+- **Citation verification (if citations required):** Every cited source must exist in the retrieved context and support the claim
+
+**Metrics to report (alongside rubric scores):**
+- RAGAS framework scores if applicable: Faithfulness, Answer Relevance, Context Recall, Context Precision
+- Retrieval metrics: Recall@K, MRR, Hit Rate — cross-reference rag-advisor's targets in `.plans/RAG-<name>.md`
+
 ### 3. Run Evaluation
 
 Execute the prompt/pipeline with each test input:
 - Capture the full output
 - Record latency and token usage if measurable
+- If the pipeline includes retrieval: record retrieval latency separately from generation latency
 - Handle errors gracefully (timeout, rate limit, content filter)
 
 ### 4. Score Results

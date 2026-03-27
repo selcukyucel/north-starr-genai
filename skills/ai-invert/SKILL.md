@@ -83,6 +83,14 @@ Systematically work through each dimension:
 - **Data poisoning**: Could malicious or incorrect data enter the pipeline?
 - At each step of the pipeline (ingestion → parsing → embedding → retrieval → generation → post-processing), what could go wrong?
 - What validation exists between steps — and what's missing?
+- **RAG failure taxonomy (if the pipeline includes retrieval):** Systematically check for these six failure modes:
+  1. **Retrieval failure** — relevant documents exist but aren't retrieved (test: known-answer queries where the document is in the index)
+  2. **Chunk boundary** — answer spans chunk boundaries and neither chunk is complete (test: questions about information near section breaks)
+  3. **Semantic gap** — user phrasing doesn't match document phrasing (test: paraphrased queries using synonyms or different jargon)
+  4. **Multi-hop** — answer requires combining facts from 2+ documents (test: comparison or synthesis questions)
+  5. **Temporal staleness** — index contains outdated information (test: questions about recently updated facts)
+  6. **Context ignored** — LLM uses parametric knowledge instead of retrieved context (test: questions where retrieved context contradicts common knowledge)
+  For each mode, generate 1-2 specific test inputs tailored to THIS pipeline's corpus and query patterns.
 
 #### E. Cost & Resource
 - **Token cost at scale**: Estimate cost per request (input tokens + output tokens) × volume at 1x, 10x, 100x

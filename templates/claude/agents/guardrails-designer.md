@@ -88,6 +88,17 @@ Verify: PII is detected, appropriate action taken (redact/reject/flag), no PII r
 - Test with inputs containing control characters, null bytes, excessive whitespace
 - Verify: invalid inputs are rejected with clear error messages
 
+#### Retrieval Security (if the pipeline includes RAG)
+
+If the pipeline retrieves context from a vector store or document index, test these additional attack surfaces:
+
+- **Query injection before embedding:** Test whether user input can manipulate the embedding query to retrieve unintended documents (e.g., appending metadata filter overrides, injecting filter syntax if the vector DB supports filtered search)
+- **PII in retrieved chunks:** Verify that chunks retrieved from the index are scanned for PII before being injected into the prompt — even if source documents were "clean," chunking and re-assembly can surface PII in unexpected combinations
+- **Access control on retrieval:** If the corpus contains documents with different access levels, verify that retrieval respects the user's permissions (row-level security, tenant isolation via metadata filtering)
+- **Audit logging for retrieval:** Verify that retrieval decisions are logged — which chunks were retrieved, their similarity scores, which were filtered out, and why. Required for debugging retrieval failures and compliance.
+
+Cross-reference: rag-advisor defines the retrieval pipeline in `.plans/RAG-<name>.md` — read it to understand which stages need guardrails.
+
 ### 4. Test Output Guardrails
 
 For each output guardrail, verify behavior:
@@ -106,6 +117,11 @@ For each output guardrail, verify behavior:
 - If the system surfaces confidence scores, verify threshold behavior
 - Test with ambiguous inputs that should trigger low-confidence path
 - Verify: low-confidence outputs route to human review or show uncertainty
+
+> **Starting threshold guidance (calibrate against your eval suite):**
+> - High-stakes outputs (financial, medical, legal): confidence >= 0.85 to auto-serve, escalate below
+> - Standard outputs (classification, routing, summarization): confidence >= 0.70
+> - Low-stakes outputs (suggestions, drafts, brainstorming): confidence >= 0.50
 
 #### Hallucination Checks
 - Test with questions about facts the model shouldn't know

@@ -53,6 +53,14 @@ Design the technical architecture for the story. Cover each of these areas:
 - Queue/event patterns if asynchronous
 - Guardrail attachment points (where validation occurs)
 
+**RAG Infrastructure (if the pipeline includes retrieval):**
+- **Vector DB selection:** Choose based on operational context — see rag-advisor's vector DB selection guide in `.plans/RAG-<name>.md`. Key factors: existing infrastructure (pgvector if already on PostgreSQL), scale (managed SaaS for lower ops burden, self-hosted for control), access control requirements (multi-tenant needs Weaviate or Qdrant with payload filtering)
+- **Embedding model:** Impacts storage cost (dimensions x vector count), retrieval quality, and vendor lock-in. Budget ~$0.02-0.13 per 1M tokens for OpenAI embeddings; open-source models eliminate per-token cost but require GPU hosting
+- **RAG cost model:** Total cost = embedding cost (one-time per document + re-embedding on update) + storage cost (vector DB monthly) + retrieval cost (per-query compute) + re-ranking cost (per-query, if applicable). Include in the cost envelope.
+- **Caching strategy:** Cache embedding results for repeated queries (LRU cache on query hash). Cache retrieved chunk sets for identical queries within a TTL window. Caching is especially effective for FAQ-style workloads.
+
+The architect decides *whether* to use RAG and sets infrastructure constraints; the rag-advisor agent designs the pipeline within those constraints.
+
 ### 4. Select Model(s)
 
 For each AI call in the pipeline, select a model. Evaluate candidates across three axes:

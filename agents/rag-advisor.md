@@ -61,6 +61,12 @@ For each strategy, specify:
 - **Metadata:** What metadata to attach (source document, section title, page number, date)
 - **Pre-processing:** Cleaning steps before chunking (strip headers, normalize whitespace, extract tables)
 
+> **Starting defaults (tune on your eval set):**
+> - Recursive splitting: 512 tokens, 64-token overlap (12.5%)
+> - Parent-child: 400-token child chunks for retrieval, 1600-token parent for generation context
+> - Metadata to attach: source document, section title, page number, ingestion date
+> - Pre-processing: strip boilerplate headers/footers, normalize whitespace, extract tables as separate chunks
+
 ### 4. Select Embedding Model
 
 Choose the embedding model based on requirements:
@@ -72,6 +78,12 @@ Choose the embedding model based on requirements:
 
 Document the selection with rationale and fallback option.
 
+> **Starting points (validate against your domain before committing):**
+> - General English: `text-embedding-3-large` (OpenAI, 3072d) or `BGE-large-en` (open-source, 1024d)
+> - Multilingual: `text-embedding-3-large` with multilingual support or `multilingual-e5-large`
+> - Cost-sensitive: `text-embedding-3-small` (1536d) — ~5x cheaper, ~3-5% accuracy drop on typical benchmarks
+> - Benchmark scores don't predict domain fit — always test your actual queries against your actual corpus
+
 ### 5. Design Retrieval Approach
 
 #### Retrieval Strategy
@@ -80,9 +92,17 @@ Document the selection with rationale and fallback option.
 - **Hybrid** — combine dense + sparse with score fusion. Best overall accuracy, higher complexity
 - **Multi-query** — generate query variations, retrieve for each, merge results. Improves recall for ambiguous queries
 
+#### When to Use Each Strategy
+| Signal in your data | Recommended strategy |
+|---|---|
+| Queries are natural language, corpus is prose | Dense retrieval (vector similarity) |
+| Queries contain codes, IDs, exact terms | Sparse retrieval (BM25) |
+| Mixed query types OR accuracy is critical | Hybrid (Reciprocal Rank Fusion with ~0.3 sparse / 0.7 dense weights — tune on eval set) |
+| Queries are vague or ambiguous | Multi-query (HyDE or step-back prompting to expand, then merge results) |
+
 #### Retrieval Parameters
-- **Top-K:** Number of chunks to retrieve (typical: 5-15)
-- **Similarity threshold:** Minimum score to include a chunk (prevents irrelevant results)
+- **Top-K:** Number of chunks to retrieve (starting default: 5-10 for dense retrieval; 20 candidates if feeding into a re-ranking pipeline)
+- **Similarity threshold:** Minimum score to include a chunk (starting default: 0.65 cosine similarity — drop results below this to prevent irrelevant context from reaching the prompt)
 - **Diversity filter:** Avoid returning near-duplicate chunks from the same source
 - **Metadata filters:** Pre-filter by date, source, category before similarity search
 
@@ -97,6 +117,23 @@ Specify:
 - Re-ranking model and parameters
 - How many candidates to re-rank (retrieve top-50, re-rank to top-5)
 - Latency budget for the re-ranking step
+
+> **Recommended starting pipeline:** Retrieve top-20 candidates → re-rank with cross-encoder (e.g., `cross-encoder/ms-marco-MiniLM-L-6-v2`) → return top-5. Budget 50-100ms for the re-ranking step. For hybrid retrieval, apply Reciprocal Rank Fusion before the cross-encoder stage.
+
+### 6b. Select Vector Database (if applicable)
+
+If the project requires a vector database, select based on operational context:
+
+| If you need... | Consider | Why |
+|---|---|---|
+| Quick prototype, local dev | Chroma | Zero-config, in-process, SQLite-backed |
+| Managed SaaS, minimal ops | Pinecone | Serverless option, built-in metadata filtering |
+| Self-hosted, high throughput | Qdrant | Rust-based, strong filtering, good batch performance |
+| Enterprise features (RBAC, hybrid search) | Weaviate | Built-in modules, hybrid search native, multi-tenant support |
+| Already running PostgreSQL | pgvector | No new infra, familiar ops, good enough for <1M vectors |
+| Research / offline batch | FAISS | Excellent for experimentation, not a production database |
+
+Document the selection in the RAG design file with rationale and migration path if you outgrow it.
 
 ### 7. Design Context Window Management
 
@@ -164,6 +201,13 @@ Write to `.plans/RAG-<name>.md`:
 - Candidates: retrieve <N>, re-rank to <N>
 - Latency budget: <ms>
 
+## Retrieval Quality Targets
+- Recall@K target: <e.g., 0.85 at K=5>
+- MRR target: <e.g., 0.75>
+- Hit Rate target: <e.g., 0.90>
+- Retrieval latency budget: <P95 target in ms>
+- Evaluation method: <golden question set / production sampling / both>
+
 ## Context Window Budget
 | Component | Tokens |
 |-----------|--------|
@@ -187,8 +231,17 @@ Write to `.plans/RAG-<name>.md`:
 - **Monthly total:** <estimate>
 
 ## Known Risks
-- <risk 1 and mitigation>
-- <risk 2 and mitigation>
+Check against these common RAG failure modes:
+- **Retrieval failure** — relevant documents exist but aren't retrieved (embedding gap, metadata filter too strict)
+- **Chunk boundary** — answer spans two chunks, neither is complete alone
+- **Semantic gap** — user query phrasing doesn't match document phrasing (jargon, synonyms)
+- **Multi-hop** — answer requires combining facts from multiple documents
+- **Temporal staleness** — index contains outdated information
+- **Context ignored** — LLM ignores retrieved context in favor of parametric knowledge
+
+Additional project-specific risks:
+- <risk and mitigation>
+- <risk and mitigation>
 ```
 
 ### 9. Return Summary
