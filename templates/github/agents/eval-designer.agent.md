@@ -23,6 +23,13 @@ You will be given acceptance criteria, a prompt to evaluate, or an existing eval
 7. **Write results** — `.plans/EVAL-<name>/results.md`
 8. **Route feedback** — on failure, prepare structured feedback for prompt-engineer
 
+## Additional Evaluation Dimensions
+
+- **RAG evaluation** (if pipeline includes retrieval): Add retrieval recall, context precision, grounding checks. Use RAGAS metrics. Add adversarial retrieval and grounding tests.
+- **Multimodal evaluation** (if pipeline processes images/PDFs/documents): Add OCR accuracy, table extraction, image description quality criteria. Test with low-quality scans, mixed-content documents, PII in images. Classify failures by source: preprocessing vs retrieval vs generation.
+- **Reasoning evaluation** (if pipeline uses reasoning/CoT models): Test intermediate step correctness, not just final answer. Add hard multi-step problems, monitor for confident-but-wrong reasoning. Track reasoning cost (tokens per step) alongside accuracy.
+- **LLM-as-judge** (if using LLMs to score eval outputs): Calibrate judge model against human ratings on 20+ examples before trusting. Report inter-rater agreement. Use structured rubrics, not open-ended scoring.
+
 ## Important
 
 - Scoring is strict — "partially" counts as NO

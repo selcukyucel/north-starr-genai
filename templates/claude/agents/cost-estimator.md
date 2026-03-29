@@ -65,11 +65,18 @@ Read `.plans/PIPELINE-STATUS.md` for current budget allocation:
 
 #### 5. Identify Optimizations
 
-- **Prompt caching** — what percentage of tokens are cacheable?
-- **Model tiering** — can cheaper models handle simpler subtasks?
-- **Batching** — are there batch-eligible operations?
-- **Result caching** — can identical queries be cached?
-- **RAG optimization** — can fewer/smaller chunks achieve similar quality?
+Evaluate each lever systematically — always profile first to know where cost actually concentrates:
+
+| Lever | Typical Savings | Check |
+|-------|----------------|-------|
+| **Prompt caching** | 50-90% on input tokens | What % of tokens are in the system prompt / few-shot examples? Provider supports caching? |
+| **Response caching** | 100% on cache hits | Are there repeated identical queries? What TTL is safe before responses go stale? |
+| **Model routing** | 30-70% overall | Can simple requests (classification, yes/no) route to a cheaper model? What % of traffic is simple? |
+| **Batching** | 10-40% throughput gain | Are there batch-eligible operations (embedding, bulk classification)? Latency tolerance? |
+| **RAG optimization** | 20-50% context tokens | Can fewer/smaller chunks achieve similar retrieval quality? Is re-ranking reducing noise? |
+| **Output length control** | 10-30% on output tokens | Can max_tokens be constrained? Are structured outputs smaller than free-text? |
+
+**Cost reduction methodology:** Profile current spend → identify the top cost driver (usually input tokens or model choice) → apply the highest-impact lever → measure the quality impact with evals → iterate. Never optimize without measuring quality regression.
 
 #### 6. Write Cost Envelope
 

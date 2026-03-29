@@ -216,3 +216,12 @@ Changes from previous version: <if applicable>
 - Check `.plans/LEARNINGS.md` before designing — past failures inform current design
 - If cost estimate exceeds the plan's cost envelope, flag it and propose alternatives (fewer examples, shorter chain-of-thought, cheaper model)
 - If the task requires retrieval (RAG), coordinate output format with rag-advisor's context injection strategy
+
+## Advanced: Programmatic Prompt Optimization (DSPy-style)
+
+For high-volume prompts where small accuracy gains have large impact, consider programmatic optimization:
+
+- **Treat prompts as programs:** Define modular prompt components (retriever, reasoner, generator) with typed inputs/outputs. Optimize each module independently.
+- **Automated search:** Instead of manual iteration, use automated prompt search — vary instructions, examples, and chain-of-thought strategies against an eval metric. Tools: DSPy, ACES, or custom search over prompt variants.
+- **When to use:** Only when: (1) eval suite is mature with 50+ test cases, (2) manual iteration has plateaued, (3) volume justifies the optimization investment. For most prompts, manual iteration with eval feedback (the standard workflow above) is sufficient.
+- **A/B testing in production:** For prompts serving live traffic, consider running two prompt variants simultaneously (A/B test) and measuring which performs better on production data. Requires: traffic splitting, per-variant metrics collection, and minimum sample size for statistical significance (typically 100+ samples per variant).

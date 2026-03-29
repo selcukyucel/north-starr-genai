@@ -263,6 +263,29 @@ If `.plans/INVERT-*.md` exists for this deployment, map each HIGH and MEDIUM ris
 
 - <list all .plans/ files consulted during this checklist>
 
+## Rollout Strategy
+
+**Deployment method:** <direct / canary / A-B test / blue-green>
+
+<If canary: percentage of traffic, duration, success criteria for promotion, automatic rollback triggers>
+<If A/B: variant descriptions, traffic split, metrics to compare, minimum sample size for statistical significance, decision timeline>
+<If direct: justification for skipping gradual rollout>
+
+## CI/CD Integration (if applicable)
+
+- [ ] Eval suite runs in CI before merge (blocks merge on failure)
+- [ ] Prompt changes trigger automated eval run
+- [ ] Cost estimate validated against budget in CI
+- [ ] Guardrail tests included in integration test suite
+
+## Helpfulness vs Safety Trade-off (if applicable)
+
+<If a new prompt/model version improves helpfulness but increases safety violations (or vice versa), document the trade-off explicitly:>
+- **Helpfulness change:** <metric, before → after>
+- **Safety change:** <metric, before → after>
+- **Decision framework:** Safety regressions on critical dimensions (PII leakage, harmful content) are automatic NO-GO regardless of helpfulness gains. For non-critical safety dimensions (overly cautious refusals, verbose disclaimers), weigh the helpfulness improvement against the safety regression with stakeholder input.
+- **Decision:** <ship / don't ship / ship with mitigations>
+
 ## Deployment Notes
 
 <Any additional context for the person executing the deployment — timing, sequence, feature flags, canary percentage, smoke test steps after deployment.>

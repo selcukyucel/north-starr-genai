@@ -61,7 +61,56 @@ Design the technical architecture for the story. Cover each of these areas:
 
 The architect decides *whether* to use RAG and sets infrastructure constraints; the rag-advisor agent designs the pipeline within those constraints.
 
-### 4. Select Model(s)
+**Inference Optimization (if latency or cost targets are tight):**
+
+Before committing to architecture, identify optimization levers. Always profile before optimizing — measure where time and money actually go.
+
+| Lever | Impact | When to Use | Trade-off |
+|-------|--------|-------------|-----------|
+| **Prompt caching** | 50-90% input cost reduction | System prompt > 1024 tokens, repeated across calls | Provider-specific, cache invalidation on prompt change |
+| **Response caching** | Eliminates duplicate calls | FAQ-style workloads, repeated queries | Stale responses if source data changes |
+| **Batching** | Higher throughput, lower per-unit cost | Batch-eligible operations (embedding, classification) | Higher latency for individual requests |
+| **Streaming** | Better perceived latency | User-facing generation | No cost savings, harder to validate complete output |
+| **Model routing** | 30-70% cost reduction | Mixed-complexity queries | Routing accuracy determines savings |
+
+**Model routing pattern:** Route simple queries to cheaper/faster models (Haiku-class), reserve expensive models (Opus-class) for complex reasoning. Start with keyword rules, graduate to a lightweight classifier when volume justifies it.
+
+**Profiling checklist:** Before optimizing, measure: p50/p95 latency per pipeline stage, token usage breakdown (system vs user vs context vs output), cache hit rate, cost per request at current volume.
+
+**Agent Topology (if the system being built includes autonomous agents):**
+
+If the architecture includes LLM-driven agents (tool-calling loops, autonomous workflows), design these controls:
+
+- **Loop control:** Define max-steps (e.g., 10 tool calls), stop conditions (task complete, confidence threshold met, human approval required), and timeout per agent run. Guardrails against infinite loops are non-negotiable.
+- **State management:** Choose short-term (conversation context only) vs persistent state (database-backed checkpoints). Define what is stored, where, and how it is updated. Checkpointing enables recovery from mid-task failures.
+- **Idempotency:** All tool calls must be idempotent or explicitly handle retries. Define retry strategy with exponential backoff for external API calls. Track which actions have been completed to avoid duplication.
+- **Multi-agent coordination** (if multiple agents collaborate): Define roles and handoff protocol (what data each agent passes), shared memory scope (what each agent can read/write), and conflict resolution (what happens when agents disagree or produce contradictory outputs).
+- **Observability:** Structured traces for every agent step (tool called, input, output, latency, tokens). Enable replay of agent runs for debugging.
+
+### 4. Model Customization Decision
+
+Before selecting a specific model, decide the customization approach. Use this escalation ladder — start at the cheapest option and only escalate when the simpler approach demonstrably fails:
+
+| Approach | When to Use | Cost | Time to Production | Risk |
+|----------|------------|------|-------------------|------|
+| **Prompt engineering** | Default starting point. Task can be defined with instructions + examples. Output format is achievable with structured prompting. | Lowest | Hours-days | Lowest |
+| **Prompt + RAG** | Task requires grounding in external knowledge, documents, or data that changes over time. Prompting alone hallucinates or lacks domain facts. | Low-Medium | Days-weeks | Low |
+| **Fine-tuning (PEFT/LoRA)** | Prompting + RAG tried and measured, but: output style/tone needs deep customization, task requires domain-specific behavior that few-shot can't capture, latency budget requires a smaller specialized model, or structured output format compliance is below 95% with prompting alone. | High | Weeks-months | Medium-High |
+
+**Decision criteria — escalate only when:**
+- Prompt-only approach: eval score < threshold after 3+ prompt iterations
+- Add RAG when: >20% of failures are due to missing knowledge (not reasoning)
+- Add fine-tuning when: >15% of failures are style/format issues that few-shot examples can't fix, AND you have 500+ quality labeled examples, AND you've measured the baseline thoroughly
+
+**Fine-tuning risk flags (document in ADR if fine-tuning is chosen):**
+- Data curation cost: labeling, filtering, de-duplication, privacy compliance
+- Failure modes: overfitting (eval on held-out set), catastrophic forgetting (test on general tasks), bias amplification (test on demographic slices)
+- Operational overhead: experiment tracking, model versioning, deployment of custom weights, regression monitoring post-deployment
+- Lock-in: fine-tuned models are provider-specific and harder to migrate
+
+Document the customization decision and rationale in the ADR. If fine-tuning is chosen, the ADR must include: baseline metrics from the prompt-only approach, the specific gap that motivates fine-tuning, and the evaluation plan for the fine-tuned model.
+
+### 5. Select Model(s)
 
 For each AI call in the pipeline, select a model. Evaluate candidates across three axes:
 
@@ -82,7 +131,22 @@ Produce a comparison table for the top 2-3 candidates per AI call:
 
 Select the model that best fits the story's constraints. Justify the choice in one paragraph. If accuracy requirements are uncertain, recommend starting with the cheaper model and upgrading based on eval results.
 
-### 5. Define Cost Envelope
+**Reasoning Model Selection (if the task requires multi-step reasoning):**
+
+Use reasoning models (o1-style, extended thinking) only when:
+- The task requires decomposition into multiple logical steps AND standard models fail on accuracy
+- Examples: multi-step math, complex business rule evaluation, multi-hop fact synthesis, code generation with constraints
+- Cost/latency budget allows (reasoning models use 3-10x more tokens, with proportional cost and latency)
+
+Do NOT use reasoning models for: simple classification, extraction, formatting, single-step tasks, or when standard models already meet accuracy targets.
+
+If a reasoning model is selected, specify:
+- **Max reasoning steps/tokens:** Cap the reasoning budget to prevent runaway cost (e.g., max 4000 thinking tokens)
+- **Verification checkpoints:** Define intermediate checks — tool calls to verify facts, constraints to validate at each step, or self-consistency checks between reasoning steps
+- **Fallback:** If reasoning model exceeds budget or times out, fall back to standard model with explicit uncertainty signal
+- **Reasoning failure modes to monitor:** Confident-but-wrong reasoning (model arrives at plausible but incorrect conclusion), hidden assumption errors (model introduces unstated assumptions mid-reasoning), and circular reasoning loops
+
+### 6. Define Cost Envelope
 
 Calculate the cost envelope for this story:
 
@@ -94,7 +158,7 @@ Calculate the cost envelope for this story:
 
 If no volume estimate is available from the story, state assumptions explicitly and flag for product owner review.
 
-### 6. Write ADR
+### 7. Write ADR
 
 Write the Architecture Decision Record to `.plans/ADR-<name>.md` using the story name as `<name>`. Use this format:
 
@@ -115,9 +179,15 @@ Include relevant constraints from DECISIONS.md and LEARNINGS.md.>
 
 <The architecture chosen. Pipeline topology, integration approach, key patterns.>
 
+## Model Customization Decision
+
+**Approach:** <Prompt-only / Prompt + RAG / Fine-tuning>
+**Rationale:** <Why this level of customization — what was tried, what failed, what gap remains>
+<If fine-tuning: baseline metrics, gap description, eval plan for fine-tuned model>
+
 ## Model Selection
 
-<Comparison table from step 4. Selected model and rationale.>
+<Comparison table from step 5. Selected model and rationale.>
 
 | Model | Accuracy | Cost/1K tokens | p50 Latency | Recommendation |
 |-------|----------|-----------------|-------------|----------------|
@@ -158,7 +228,7 @@ Include relevant constraints from DECISIONS.md and LEARNINGS.md.>
 - <anything unresolved that downstream agents should address>
 ```
 
-### 7. Append Decision to DECISIONS.md
+### 8. Append Decision to DECISIONS.md
 
 Append a one-line entry to `.plans/DECISIONS.md` so future agents can see this decision at a glance:
 
@@ -176,7 +246,7 @@ Architectural and cross-story decisions. Read by all planning agents before maki
 - [<date>] ADR-<name>: <summary> (ai-architect)
 ```
 
-### 8. Return Summary
+### 9. Return Summary
 
 After writing the ADR and updating DECISIONS.md, return a concise summary for downstream routing:
 

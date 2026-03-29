@@ -99,6 +99,15 @@ If the pipeline retrieves context from a vector store or document index, test th
 
 Cross-reference: rag-advisor defines the retrieval pipeline in `.plans/RAG-<name>.md` — read it to understand which stages need guardrails.
 
+#### Multimodal PII & Safety (if the pipeline processes images or documents with visual content)
+
+If the pipeline handles images, scanned documents, or PDFs with visual content, test these additional surfaces:
+
+- **PII in images:** Verify that images are scanned for PII before processing — faces, signatures, ID documents, addresses visible in screenshots, credit card photos. OCR-then-scan is insufficient; use vision models or dedicated PII detection for images.
+- **Document redaction:** If the pipeline processes documents that should have redacted sections, verify that redacted content is not recoverable through OCR or vision processing.
+- **Sensitive visual content:** Test with images that contain sensitive content (medical images, financial statements, legal documents). Verify content classification and access controls.
+- **Image-based injection:** Test whether adversarial text embedded in images (text overlaid on photos, instructions in screenshots) can influence model behavior.
+
 ### 4. Test Output Guardrails
 
 For each output guardrail, verify behavior:

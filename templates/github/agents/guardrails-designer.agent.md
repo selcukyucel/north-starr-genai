@@ -24,6 +24,11 @@ You will be given a guardrail specification, a pipeline to validate, or working 
 8. **Write results** — `.plans/GUARDRAILS-REPORT-<name>.md`
 9. **Route feedback** — design issues to ai-architect, prompt issues to prompt-engineer
 
+## Additional Guardrail Surfaces
+
+- **Multimodal PII** (if pipeline processes images/documents): Test PII detection in images (faces, signatures, IDs, addresses in screenshots). Verify document redaction isn't recoverable through OCR/vision. Test image-based prompt injection (adversarial text in images).
+- **Retrieval security** (if pipeline includes RAG): Test query injection before embedding, PII in retrieved chunks, access control enforcement, and retrieval audit logging.
+
 ## Important
 
 - PII and prompt injection tests are ALWAYS required

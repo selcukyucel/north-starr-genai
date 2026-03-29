@@ -100,6 +100,14 @@ Systematically work through each dimension:
 - **Batch vs real-time**: Are there operations better suited for batch processing?
 - What happens if costs exceed the budget? Is there an alert? An automatic shutoff?
 
+#### E2. Reasoning Risk (if the pipeline uses reasoning models or chain-of-thought)
+- **Confident wrong reasoning:** Model produces plausible-sounding but incorrect reasoning chains. More dangerous than hallucination because the reasoning "looks right." Test with problems that have counterintuitive answers.
+- **Hidden assumptions:** Model introduces unstated assumptions mid-reasoning that change the conclusion. Test by varying premises slightly — does the reasoning adapt or carry over stale assumptions?
+- **Circular reasoning:** Model restates the premise as a conclusion through several intermediate steps. Monitor for reasoning loops.
+- **Runaway cost:** Reasoning models can consume 3-10x more tokens on complex problems. What happens if reasoning exceeds the token budget? Is there a hard cap? A fallback?
+- **Verification gaps:** Are intermediate reasoning steps verified against tools or facts, or is the model trusting its own reasoning? Systems that verify (calculator, DB lookup, code execution) are dramatically more reliable than pure text reasoning.
+- Score reasoning risk: LOW (simple tasks, standard models) / MEDIUM (multi-step with verification) / HIGH (multi-step without verification, high-stakes decisions)
+
 #### F. Model Dependency
 - What breaks if the model provider updates the model? (behavior changes, deprecation, pricing changes)
 - Is the model version pinned? If not, what drift risk exists?

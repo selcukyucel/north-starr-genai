@@ -87,6 +87,38 @@ If evaluating a RAG pipeline, add these criteria to the rubric:
 - RAGAS framework scores if applicable: Faithfulness, Answer Relevance, Context Recall, Context Precision
 - Retrieval metrics: Recall@K, MRR, Hit Rate — cross-reference rag-advisor's targets in `.plans/RAG-<name>.md`
 
+#### Multimodal Evaluation (if the pipeline processes images, PDFs, or documents with visual content)
+
+If evaluating a pipeline that handles non-text inputs, add these criteria:
+
+**Preprocessing quality criteria:**
+- **OCR Accuracy:** "Extracted text matches the source document" (YES/NO) — compare against ground-truth text for a sample of documents
+- **Table Extraction:** "Table structure is preserved (correct rows, columns, headers)" (YES/NO)
+- **Image Description Quality:** "Vision-generated description captures the key information in the image" (YES/NO)
+
+**Multimodal-specific test cases:**
+- **Low-quality inputs (3-5):** Blurry scans, rotated documents, low-resolution images, handwritten text — test graceful degradation
+- **Mixed-content documents (3-5):** Documents with interleaved text, tables, and images — verify all content types are processed
+- **PII in images (2-3):** Documents with PII visible in images (signatures, ID photos, addresses in screenshots) — verify PII detection covers visual content
+
+**Error attribution:** When multimodal tests fail, classify the failure source: preprocessing (OCR/parsing), retrieval, or generation. Log which stage failed to guide remediation.
+
+#### Reasoning Model Evaluation (if the pipeline uses reasoning/CoT models)
+
+If evaluating a pipeline that uses reasoning models (o1-style, chain-of-thought, extended thinking), add these criteria:
+
+**Reasoning quality criteria:**
+- **Step Correctness:** "Each intermediate reasoning step is logically valid" (YES/NO) — not just the final answer
+- **No Hallucinated Steps:** "The reasoning doesn't introduce facts or assumptions not present in the input or context" (YES/NO)
+- **Efficient Reasoning:** "The model reaches the answer without unnecessary steps or circular reasoning" (YES/NO)
+
+**Reasoning-specific test cases:**
+- **Hard multi-step problems (5-10):** Problems requiring 3+ reasoning steps, with known correct answers and correct intermediate steps. Verify both the final answer and the reasoning path.
+- **Adversarial reasoning (3-5):** Problems designed to trigger common reasoning failures — contradictory premises, trick questions, problems where the obvious answer is wrong.
+- **Reasoning budget tests (2-3):** Problems that should be solvable within the configured reasoning token budget. Verify the model doesn't exceed max reasoning tokens.
+
+**Metrics to report:** Reasoning token usage per problem, reasoning accuracy (% of correct final answers), step accuracy (% of correct intermediate steps), average reasoning cost per problem.
+
 ### 3. Run Evaluation
 
 Execute the prompt/pipeline with each test input:
@@ -198,6 +230,25 @@ If the verdict is FAIL or WARN, prepare feedback for the prompt-engineer using t
 ```
 
 **Critical rule:** Always include the **actual model output** in failure feedback — not a summary of what went wrong. The prompt-engineer needs to see exactly what the model produced to diagnose the issue.
+
+### LLM-as-Judge (if using LLMs to score evaluation outputs)
+
+When human scoring is too slow or expensive, an LLM judge can score outputs against rubrics. Use with caution:
+
+**Setup:**
+- Use a stronger model as judge than the model being evaluated (e.g., Opus judging Sonnet outputs)
+- Provide the judge with the same binary rubric used for human scoring — structured criteria, not open-ended "rate quality"
+- Include the original input, expected output (if available), and actual output in the judge prompt
+
+**Calibration (required before trusting judge scores):**
+- Score 20+ examples with both human and LLM judge
+- Measure agreement rate — must be >85% on binary criteria to be useful
+- Identify systematic biases (LLM judges often over-score fluency and under-score factual accuracy)
+- Re-calibrate periodically as the evaluated model or judge model changes
+
+**Limitations:**
+- LLM judges struggle with: factual verification (can't check external facts), domain expertise (may not know domain-specific correctness), and subtle errors (grammatically correct but semantically wrong)
+- Never use LLM-as-judge as the sole evaluator for safety-critical outputs — always include human review sampling
 
 ## Important
 
