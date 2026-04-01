@@ -80,6 +80,11 @@ The inverted story is derived from the pre-mortem and persona inversion. It name
 
 Fill in `[specific fallback]` and `[specific notification]` with concrete behaviors for this story — not boilerplate.
 
+BAD: "must show an error message and notify the user" (vague — what error? what notification?)
+GOOD: "must return the document unclassified with status 'NEEDS_MANUAL_REVIEW', add it to the compliance officer's review queue, and display: 'This document could not be confidently classified. It has been queued for manual review.'"
+
+The fallback must name: (1) what state the data enters (queue, flag, hold), (2) who is notified and how (queue, email, dashboard alert), (3) what the user sees (specific message text).
+
 - **Include technical notes** — brief pointers to implementation approach, APIs, components
 
 Assign story IDs: `S1.1` (epic 1, story 1), `S1.2`, `S2.1`, etc. Epic EA stories use `SA.1`-`SA.6`.
@@ -355,3 +360,43 @@ Invert candidates: <count> stories flagged for /invert analysis
 - **Every AI-touching story must have a graceful degradation acceptance criterion**
 - **Inverted stories are mandatory for every story, not optional**
 - If an existing `STORIES-<name>.md` exists, cross-reference to avoid duplication — reference existing story IDs where they overlap
+
+---
+
+## Mode 2: Refine (TRIAGE Phase)
+
+In refine mode, the orchestrator feeds a single user story for enrichment before DESIGN.
+
+**Inputs:** Single user story + DECISIONS.md + LEARNINGS.md + root context files.
+
+**Workflow:**
+1. Read story and context (including prior decisions and learnings)
+2. Enrich with AI-specific criteria. If the story doesn't specify values, propose defaults by task type:
+   - **Latency:** Interactive <2s, background <30s, document analysis <10s. Default: <5s.
+   - **Accuracy:** Safety-critical ≥95%, business-critical ≥90%, convenience ≥80%. Default: ≥85%.
+   - **Cost:** Derive from volume × per-call cost. State assumptions if volume unknown.
+   - **Model hints:** Simple→Haiku/GPT-4o-mini, moderate→Sonnet/GPT-4o, complex→Opus. Flag as "to be validated by ai-architect."
+   - **Security surface:** Attack vectors this story introduces.
+3. Assess readiness: READY (proceed to DESIGN) / NEEDS CLARIFICATION (escalate to HUMAN) / NEEDS DECOMPOSITION (split and re-queue)
+4. Write refined story to `.plans/REFINED-<story-id>.md`
+
+---
+
+## Mode 3: Incorporate Feedback (REWORK Phase)
+
+In feedback mode, the orchestrator routes downstream agent feedback back to revise a story.
+
+**Inputs:** Refined story + feedback payload (which agent, what failed, metrics) + DECISIONS.md + LEARNINGS.md.
+
+**Workflow:**
+1. Read feedback and classify: acceptance criteria gap, threshold miscalibration, missing constraint, scope issue, architecture conflict
+2. Translate specific feedback into specific revision — match to failure pattern:
+   - Eval accuracy fail on specific category → add acceptance criterion for that category, note examples for prompt-engineer
+   - Eval accuracy fail overall → reconsider threshold or recommend model upgrade
+   - Cost overrun → reduce envelope, suggest cheaper model or caching
+   - Guardrail violation → add security acceptance criterion
+   - Latency breach → add constraint or suggest async/caching
+   - Architecture conflict → revise scope or propose override
+   Always include: exact failing metric (before → target), specific input pattern, which agent sees the revision next.
+3. Maintain audit trail (append-only revision history in refined story)
+4. Flag cross-story impacts if revision affects sibling stories

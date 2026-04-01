@@ -136,10 +136,12 @@ Spawn the `orchestrator` agent on a separate thread with this context:
 > Decisions: `.plans/DECISIONS.md`
 > Learnings: `.plans/LEARNINGS.md`
 >
-> Start with the first unblocked story. Route through: TRIAGE (chief-ai-po refine) → DESIGN (ai-architect + invert + cost-estimator) → PLAN (layoutplan) → BUILD (specialists) → HARDEN (eval-designer + guardrails-designer + ai-ops) → DELIVER (demo-builder).
+> Start with the first unblocked story. Route through: TRIAGE (chief-ai-po refine) → DESIGN (ai-architect + invert + cost-estimator) → PLAN (layoutplan) → BUILD (use BUILD Dispatch Protocol: parse specialist tags, dispatch with payloads, enforce RAG→Prompt order, track completion) → HARDEN (eval-designer + guardrails-designer + ai-ops — if multiple gates fail, dispatch to different agents in parallel, severity-ranked) → DELIVER (demo-builder).
 >
-> At each HUMAN escalation, pause and present the escalation payload.
-> After each state transition, update PIPELINE-STATUS.md."
+> At each HUMAN escalation, pause and present the escalation payload using the standard format.
+> After each state transition, update PIPELINE-STATUS.md.
+> For architecture divergence: inject constraints into DESIGN dispatch, escalate conflicts using Operator Escalation Format.
+> For parallel write conflicts: check at PLAN→BUILD boundary against all active BUILD/HARDEN stories."
 
 ### Step 6: Present Pipeline Summary
 
@@ -204,9 +206,13 @@ PLAN:    orchestrator → layoutplan
            → Reads inversion + ADR + cost envelope + learnings
            → Produces implementation plan with tasks
 
-BUILD:   orchestrator → [prompt-engineer, rag-advisor, integration-planner]
-           → Specialists work in parallel on different plan sections
-           → Each reads LEARNINGS.md before starting
+BUILD:   orchestrator → BUILD Dispatch Protocol
+           → Parses plan tasks for **Specialists needed:** tags
+           → Dispatches each specialist with explicit payload (agent, story, tasks, output path, constraints)
+           → If both rag-advisor + prompt-engineer needed: rag-advisor runs FIRST (produces Context Injection Contract), THEN prompt-engineer
+           → Tracks specialist completion in PIPELINE-STATUS.md
+           → When all specialists done → signals implementation start
+           → If integration-planner BLOCKED (credentials): escalates to HUMAN with 24h SLA, other specialists continue
 
 HARDEN:  orchestrator → [eval-designer, guardrails-designer, ai-ops]
            → All three validate in parallel

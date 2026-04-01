@@ -29,6 +29,7 @@ Also read:
 - Read the plan section or eval feedback that triggered this work
 - Read root context files (`CLAUDE.md`, `AGENTS.md`) for architecture constraints and prompt conventions
 - Read `.plans/LEARNINGS.md` for accumulated prompt insights (what worked, what failed, cost traps)
+- **If a RAG design exists** (``.plans/RAG-<name>.md``), read the **Context Injection Contract** section — this defines the format, delimiters, token budget, no-results fallback, and citation format that the prompt MUST use. Design the prompt around this contract. If the contract is missing or incomplete, flag it and request rag-advisor to produce one before proceeding.
 - If iterating on an existing prompt, read all versions in `.plans/PROMPTS-<name>/` to understand evolution
 - If responding to eval feedback, read `.plans/EVAL-<name>/results.md` for specific failure patterns
 - Identify the target model, expected input/output formats, and quality dimensions
@@ -79,13 +80,25 @@ When using few-shot examples:
 
 ### 4. Estimate Token Budget
 
-Calculate expected token usage:
-- System prompt tokens (fixed cost per call)
-- Input tokens (variable, based on expected input distribution)
-- Output tokens (variable, estimate from output schema)
-- Few-shot example tokens (fixed cost per call)
-- Total per-call estimate and monthly projection based on expected volume
-- Flag if total exceeds cost envelope from the plan
+Calculate expected token usage with actual numbers — do not use `~<N>` placeholders without filling them in. Derive from the task parameters:
+
+- **System prompt tokens:** Count the actual tokens in your system prompt (use ~4 chars per token as rough estimate, or count words x 1.3)
+- **Few-shot examples:** Count examples x avg tokens per example (a typical classification example pair = 50-150 tokens)
+- **Input tokens:** Use the avg input size from the specialist input or plan (e.g., "avg 200 tokens" → 200)
+- **Output tokens:** Estimate from your output schema (JSON with 2-3 fields = 30-80 tokens; free-text paragraph = 100-300 tokens)
+- **RAG context tokens:** If RAG, use the max context budget from the Context Injection Contract
+- **Per-call total:** Sum all components
+- **Monthly projection:** per-call tokens x expected call volume x model rate
+
+Example: Classification prompt with 5 few-shot examples
+- System prompt: ~150 tokens
+- Few-shot (5 examples x 120 tokens): ~600 tokens
+- Input (avg ticket): ~200 tokens
+- Output (JSON label + priority): ~40 tokens
+- **Per call: ~990 tokens → at Claude Haiku $0.25/$1.25 per 1M in/out → ~$0.0003/call**
+- **1K calls/day × 30 days = $9/month**
+
+Flag if total exceeds cost envelope from the plan.
 
 ### 5. Version the Prompt
 
@@ -102,7 +115,13 @@ Write the prompt to `.plans/PROMPTS-<name>/v<N>.md` with this format:
 
 ## Design Rationale
 
-**Pattern choice:** <Why this pattern was chosen over alternatives. E.g., "Few-shot over zero-shot because ticket categories have subtle boundaries (billing vs account) that require calibration examples. CoT not needed — classification is single-step judgment, not multi-step reasoning.">
+**Pattern choice:** State which pattern you chose AND name at least one alternative you rejected with a concrete reason. This is NOT optional — every prompt design is a choice between approaches.
+
+Format: "<chosen pattern> over <rejected alternative> because <concrete reason tied to this task>."
+
+Example: "Few-shot over zero-shot because ticket categories have subtle boundaries (billing vs account) that require calibration examples. CoT not needed — classification is single-step judgment, not multi-step reasoning."
+
+BAD: "Few-shot because the task needs examples." (No alternative named, no task-specific reasoning.)
 
 **Key trade-offs:**
 - <trade-off 1: e.g., "Added 5 few-shot examples (+800 tokens/call, +$12/mo) to improve boundary accuracy by ~15%">
@@ -149,11 +168,16 @@ Before handing off to eval-designer, include an eval readiness section in the pr
 ## Eval Handoff
 
 **Suggested test inputs (5-10):**
-1. <representative input — happy path>
-2. <representative input — short/simple>
-3. <representative input — long/complex>
-4. <representative input — ambiguous>
-5. <representative input — adversarial/edge case>
+Write REALISTIC inputs using the actual domain, not generic categories. Each input should be a concrete example that eval-designer can run directly against the prompt without modification.
+
+1. <realistic input — happy path. E.g., for ticket classification: "Subject: 'Cannot access dashboard' Body: 'Since the update yesterday, I get a 403 error when clicking Reports. Chrome 120, Mac OS.'">
+2. <realistic input — short/minimal>
+3. <realistic input — long/complex with multiple signals>
+4. <realistic input — ambiguous, could map to multiple outputs>
+5. <realistic input — adversarial or out-of-scope>
+
+BAD: "Test input 1: a normal support ticket" (not runnable)
+GOOD: "Test input 1: Subject: 'Invoice discrepancy' Body: 'Order #4521 was charged twice on my credit card. Please refund the duplicate charge of $49.99.'"
 
 **Scoring criteria (binary yes/no):**
 1. <criterion targeting the most important quality dimension>

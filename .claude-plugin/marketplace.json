@@ -35,7 +35,9 @@
         "./skills/incident-playbook",
         "./skills/handoff-doc",
         "./skills/prompt-version",
-        "./skills/orchestrate"
+        "./skills/orchestrate",
+        "./skills/assess",
+        "./skills/discover"
       ]
     }
   ]

@@ -27,7 +27,11 @@ The user provides PRD content in one of three forms:
 1. If a file/PDF path is provided, read the content. For PDFs over 20 pages, read in sequential 20-page chunks (pages 1-20, 21-40, etc.) — the Read tool supports a `pages` parameter. Read ALL chunks before proceeding; do not start scanning until the full document is loaded. For very large PDFs (60+ pages), note the page count in the scope summary so the user knows the full document was read.
 2. If text is pasted, use it directly
 3. Verify the content looks like a PRD (has features, requirements, or workflows described)
-4. If the content is ambiguous, ask the user what they want decomposed
+4. **If the input is NOT a PRD** — it's a raw requirement, problem statement, or brief description without structured sections (no acceptance criteria, no user stories, no feature list):
+   - If it's a clear, single-sentence requirement with an obvious project type: recommend `/assess` first: "This looks like a raw requirement, not a PRD. Run `/assess` to classify the project type and get architecture recommendations before decomposing."
+   - If it's vague or lacks detail: recommend `/discover` first: "This needs more detail before I can decompose it. Run `/discover` to elicit requirements through structured questions, which will generate a PRD."
+   - Do NOT proceed with decomposition on a raw requirement — the output quality will be poor without structured input
+5. If the content is ambiguous, ask the user what they want decomposed
 
 ### Step 2: Scan Structure
 

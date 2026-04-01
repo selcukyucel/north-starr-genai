@@ -82,6 +82,11 @@ The inverted story is derived from the pre-mortem and persona inversion. It name
 
 Fill in `[specific fallback]` and `[specific notification]` with concrete behaviors for this story — not boilerplate.
 
+BAD: "must show an error message and notify the user" (vague — what error? what notification?)
+GOOD: "must return the document unclassified with status 'NEEDS_MANUAL_REVIEW', add it to the compliance officer's review queue, and display: 'This document could not be confidently classified. It has been queued for manual review.'"
+
+The fallback must name: (1) what state the data enters (queue, flag, hold), (2) who is notified and how (queue, email, dashboard alert), (3) what the user sees (specific message text).
+
 - **Include technical notes** — brief pointers to implementation approach, APIs, components
 
 Assign story IDs: `S1.1` (epic 1, story 1), `S1.2`, `S2.1`, etc. Epic EA stories use `SA.1`-`SA.6`.
@@ -382,12 +387,25 @@ In refine mode, the orchestrator feeds a single user story into this agent for e
 
 #### 2. Enrich with AI-Specific Criteria
 
-Add to the story's acceptance criteria:
+Add to the story's acceptance criteria. If the story doesn't specify values, propose defaults based on the task type and flag as "proposed — confirm with architect":
 
-- **Latency threshold:** Maximum acceptable end-to-end latency (e.g., "p95 < 2s")
-- **Accuracy threshold:** Minimum acceptable accuracy score (e.g., "85% on eval suite")
+- **Latency threshold:** Maximum acceptable end-to-end latency
+  - Interactive UI (user waits): p95 < 2s
+  - Background processing (batch): p95 < 30s
+  - Document analysis (user expects delay): p95 < 10s
+  - If unsure: p95 < 5s (flag for architect review)
+- **Accuracy threshold:** Minimum acceptable accuracy score
+  - Safety/compliance-critical: ≥95%
+  - Business-critical (routing, classification): ≥90%
+  - Convenience/suggestion (non-blocking): ≥80%
+  - If unsure: ≥85% (flag for eval-designer to calibrate)
 - **Cost envelope:** Maximum acceptable cost per request and monthly budget
+  - Derive from expected volume × estimated per-call cost. If volume unknown, state assumption: "Assuming N calls/day → $X/month at <model> rates"
 - **Model hints:** Suggested model(s) based on task complexity and cost constraints
+  - Simple classification/extraction: Claude Haiku or GPT-4o-mini
+  - Moderate reasoning/generation: Claude Sonnet or GPT-4o
+  - Complex multi-step reasoning: Claude Opus or reasoning models
+  - Always flag as "to be validated by ai-architect"
 - **Security surface:** What attack vectors this story introduces (PII exposure, injection risk, data access)
 
 #### 3. Assess Readiness
@@ -480,12 +498,23 @@ In incorporate-feedback mode, the orchestrator routes downstream agent feedback 
 
 #### 2. Revise Story
 
-Update the refined story based on feedback:
-- Adjust acceptance criteria (thresholds, new criteria)
+Translate the specific feedback into specific story changes. Do NOT make generic revisions — match the revision to the failure pattern:
+
+| Feedback pattern | Story revision |
+|---|---|
+| Eval accuracy below threshold on a specific input category | Add a new acceptance criterion targeting that category: "Must correctly classify <category> with ≥X% accuracy." Note the failing examples in technical notes for prompt-engineer. |
+| Eval accuracy below threshold overall | Reconsider accuracy threshold — was it set too high? If justified, recommend model upgrade in model hints. |
+| Cost overrun | Reduce cost envelope → suggest cheaper model in hints, or note caching/batching opportunity in technical notes |
+| Guardrail violation (PII, injection) | Add security acceptance criterion: "Must not <specific violation>." Update security surface. |
+| Latency breach | Add latency constraint or suggest architecture change (async processing, caching) in technical notes |
+| Architecture conflict with DECISIONS.md | Revise story scope to conform, or propose override with rationale |
+
+Additional revisions:
 - Update cost envelope if budget feedback received
-- Update model hints if accuracy/cost trade-off changed
 - Add new constraints discovered during downstream work
 - Flag cross-story impacts if the revision affects sibling stories
+
+**Always include in the revision:** the exact failing metric (before → target), the specific input pattern that failed, and which downstream agent should see the revised story next.
 
 #### 3. Maintain Audit Trail
 

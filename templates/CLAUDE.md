@@ -28,12 +28,25 @@ Before ANY code change, print this assessment:
 
 **1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `layoutplan` for complex tasks.
 
-**2. BUILD** — Implement the plan. Spawn specialist agents based on what the plan involves:
-- Plan includes prompt design or prompt changes → spawn `prompt-engineer` agent (designs/versions prompts, writes to `.plans/PROMPTS-<name>/`)
-- Plan includes RAG pipeline work → spawn `rag-advisor` agent (designs chunking, embeddings, retrieval)
-- Plan includes external system integration → spawn `integration-planner` agent (maps API contracts, auth, retry strategies)
-- Plan is pure application code with no AI-specific design → code directly, no specialist needed
-- Specialists run on separate threads. Once they produce their outputs (prompt files, RAG configs, API specs), implement the code to wire everything together. Write tests/evals first (RED), then implement (GREEN).
+**2. BUILD** — Implement the plan. Check each task's `**Specialists needed:**` field and spawn the required agents:
+- `prompt-engineer` → designs/versions prompts, writes to `.plans/PROMPTS-<name>/`
+- `rag-advisor` → designs chunking, embeddings, retrieval, writes to `.plans/RAG-<name>.md`
+- `integration-planner` → maps API contracts, auth, retry strategies, writes to `.plans/INTEGRATION-<name>.md`
+- `agentic-designer` → designs AI-powered UI patterns, writes to `.plans/UI-<name>.md`
+- `none` → code directly, no specialist needed
+
+**Dispatch order:** If both `rag-advisor` and `prompt-engineer` are needed, run `rag-advisor` FIRST. Wait for it to write its Context Injection Contract (format, delimiters, token budget, no-results fallback), then spawn `prompt-engineer` with instruction to read that contract. All other specialists may run in parallel.
+
+**After all specialists complete**, read their outputs and implement following this mapping:
+- prompt-engineer output (`.plans/PROMPTS-<name>/`) → implement prompt loading, model call, and output parsing
+- rag-advisor output (`.plans/RAG-<name>.md`) → implement document ingestion, embedding, retrieval pipeline, and context injection
+- integration-planner output (`.plans/INTEGRATION-<name>.md`) → implement API client with auth, retry, and fallback logic
+- agentic-designer output (`.plans/UI-<name>.md`) → implement UI components following the interaction patterns
+- If integration-planner flagged BLOCKED (missing credentials), skip those tasks and escalate — implement unblocked tasks first
+
+Write tests/evals first (RED), then implement (GREEN).
+
+**Cost tracking during BUILD:** If the plan has a cost envelope, track cumulative token usage during implementation. If cumulative cost exceeds 50% of the story's cost envelope before implementation is complete, stop and escalate to ai-architect — the cost estimate may need revision before continuing.
 
 **3. HARDEN** — After code is working, validate automatically:
 - Spawn `eval-designer` agent — runs the eval suite (`.plans/EVAL-<name>/`), scores outputs against rubric, compares to baseline. If no eval suite exists, it creates one from the acceptance criteria.

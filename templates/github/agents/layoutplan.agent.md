@@ -32,7 +32,7 @@ For each task, identify:
 - Subtasks (concrete, checkable items — each subtask must have a clear done condition that a reviewer can verify in under 30 seconds)
 - Key files that will be created or modified
 - Dependencies on other tasks (what must come first)
-- Description sufficient for a fresh session with no prior context
+- Description sufficient for a fresh session with no prior context — must include: what to build, where (file paths), inputs/outputs, constraints, how to verify
 - **Cost Envelope:** if this task involves model calls, note the estimated cost impact
 
 **Structure each task as test-first (TDD) or eval-first (for AI components):**
@@ -42,12 +42,19 @@ For each task, identify:
 
 Skip test-first only for tasks that don't produce testable code (documentation, config, CI/build scripts).
 
-Map risks from the inversion analysis to specific tasks:
-- A risk about prompt fragility → a prompt testing task
-- A risk about hallucination → a validation/guardrail task
-- A risk about cost → a cost estimation subtask
-- A risk about model drift → a monitoring/baseline task
-- Edge cases from the inversion → specific test cases in the RED step
+Map risks from the inversion analysis to specific tasks. Every risk MUST appear in at least one task:
+- Prompt fragility → prompt testing task
+- Hallucination → validation/guardrail task
+- Cost → cost estimation subtask
+- Model drift → monitoring/baseline task
+- Chunking/retrieval quality → retrieval evaluation subtask
+- Migration/vendor lock-in → abstraction/rollback task
+- PII/data sensitivity → data handling subtask
+- Infrastructure limits → load test/resource sizing subtask
+- Edge cases → specific test cases in the RED step
+After writing: verify every inversion risk has a corresponding task number.
+
+**Tag each task with required specialists** (`prompt-engineer` / `rag-advisor` / `integration-planner` / `agentic-designer` / `none`) and a specific specialist input with domain context (not just the agent's generic job). BAD: "design the prompt." GOOD: "design a few-shot classification prompt for 8 department labels + P1-P4 priority, JSON output, 90% accuracy target, Claude Haiku."
 
 Order tasks by dependency. Keep the total manageable — if you have more than 6 tasks, group related work.
 
@@ -81,6 +88,8 @@ Write `.plans/PLAN-<name>.md` (using the same `<name>` as the inversion file) wi
 **Status:** PENDING
 **Files:** <key files>
 **Blocked by:** <task numbers, if any>
+**Specialists needed:** <prompt-engineer / rag-advisor / integration-planner / agentic-designer / none>
+**Specialist input:** <what the specialist should design — one sentence>
 **Cost Envelope:** <estimated cost impact if applicable>
 
 <Description>

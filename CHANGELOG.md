@@ -2,6 +2,95 @@
 
 All notable changes to north-starr-genai will be documented in this file.
 
+## [0.11.0] — 2026-04-01
+
+### Overview
+
+North Starr GenAI becomes a complete AI development agency. This release closes the 5 broken handoffs and 3 missing capabilities identified in the gap analysis, adds 2 new skills and 1 new agent, and optimizes all 15 agents via autoimprove (29 improvements, 0 reverts).
+
+### New Skills (2)
+
+- **`/assess`** — Project type recommendation. Classifies requirements into 7 project types (automation pipeline, agent harness, multi-agent system, RAG application, prompt chain, AI OS component, hybrid). Produces architecture sketch with topology heuristics, agent activation map, complexity estimate, and risk flags with mandatory impact + mitigation. Runs BEFORE `/decompose`.
+- **`/discover`** — Requirement elicitation. Asks structured questions in adaptive groups, identifies actual needs (may differ from what client asked for), produces PRD draft ready for `/decompose`. Three reframe scenarios: problem-only, premature-tech, complex-workflow. Generates measurable success criteria and proactive scope exclusions.
+
+### New Agent (1)
+
+- **`agentic-designer`** — UI/UX design for AI-powered interfaces. Produces interaction specs for conversational UI, dashboards, approval workflows, agent activity views. Includes confidence thresholds by interface type (with starting defaults), typed data contracts for component inventory, actionable error recovery paths, and AI-specific edge case derivation tables. Spawned during BUILD when plan includes user-facing AI interface.
+
+### Broken Handoffs Fixed (5)
+
+1. **BUILD Dispatch Protocol** (HIGH) — Orchestrator now parses plan tasks for specialist tags, dispatches with explicit payloads (agent, story, tasks, output paths, constraints), tracks specialist completion in PIPELINE-STATUS.md, and signals implementation start. Templates updated with specialist → implementation mapping.
+2. **Credential Escalation** (MEDIUM) — Integration-planner BLOCKED status triggers HUMAN escalation with 24h SLA; other specialists continue independently.
+3. **RAG ↔ Prompt Coordination** (MEDIUM) — rag-advisor now produces a Context Injection Contract (format, delimiters, token budget, no-results fallback, truncation, citation). prompt-engineer reads the contract before designing. Orchestrator enforces RAG-first dispatch order.
+4. **Runtime Cost Tracking** (LOW) — BUILD phase in CLAUDE.md/AGENTS.md now tracks cumulative token usage against cost envelope; escalates to ai-architect at 50%.
+5. **Specialist Dispatch Format** (LOW) — layoutplan tasks now include `**Specialists needed:**` and `**Specialist input:**` fields, giving the orchestrator an explicit dispatch list.
+
+### Missing Capabilities Added (3)
+
+1. **Project Type Recommendation** (HIGH) — `/assess` skill classifies project type before decomposition begins.
+2. **Requirement Elicitation** (MEDIUM) — `/discover` skill helps clients articulate needs without a pre-written PRD.
+3. **Agentic UI/UX Design** (LOW-MEDIUM) — `agentic-designer` agent designs AI-powered interfaces during BUILD.
+
+### Architecture Enrichments
+
+- **ai-architect: Multi-agent topology patterns** — Topology selection table (6 patterns), state sharing patterns, loop control (max iterations, cost limit, convergence, deadlock detection), agent identity design template.
+- **ai-architect: Fine-tuning decision ladder** — Prompt engineering → RAG → fine-tuning → hybrid, with red flags for premature fine-tuning.
+- **ai-architect: REWORK handling** — New input path for HARDEN failures. Diagnosis workflow, targeted fix per failure type (cost/latency/accuracy/guardrail), ADR revision format (not new file), worked cost-reduction example.
+- **ai-architect: Reference pricing table** — 7 models with actual $/1M token rates. Alternatives require quantified rejection reasons.
+- **orchestrator: Multi-failure HARDEN rules** — Parallel dispatch to different agents, single payload to same agent, 7-level severity ranking.
+- **orchestrator: Architecture divergence constraint injection** — Injects constraints into DESIGN dispatch instead of vague "must conform."
+- **orchestrator: Parallel write conflict at PLAN→BUILD** — Checks file overlap against all active BUILD/HARDEN stories.
+- **chief-ai-po: Refine mode threshold heuristics** — Default latency/accuracy/model by task type when story doesn't specify.
+- **chief-ai-po: Feedback-to-revision mapping** — 6 feedback patterns mapped to specific revision actions.
+
+### Autoimprove Results (this release)
+
+29 improvements across 10 agents, 0 reverted. 7 agents scored 100% at baseline (no changes needed).
+
+| Agent | Before | After | Rounds |
+|-------|--------|-------|--------|
+| `/assess` | 67% | 100% | 2 |
+| `/discover` | 47% | 100% | 3 |
+| `orchestrator` | 61% | 100% | 3 |
+| `layoutplan` | 60% | 100% | 3 |
+| `rag-advisor` | 33% | 100% | 4 |
+| `prompt-engineer` | 53% | 100% | 3 |
+| `ai-architect` | 53% | 100% | 3 |
+| `agentic-designer` | 20% | 100% | 4 |
+| `chief-ai-po` | 80% | 100% | 3 |
+| `eval-designer` | 80% | 100% | 1 |
+| `guardrails-designer` | 100% | 100% | 0 |
+| `integration-planner` | 100% | 100% | 0 |
+| `prompt-adversary` | 100% | 100% | 0 |
+| `ai-ops` | 100% | 100% | 0 |
+| `cost-estimator` | 100% | 100% | 0 |
+| `demo-builder` | 100% | 100% | 0 |
+| `storymap` | 100% | 100% | 0 |
+
+**Dominant improvement pattern:** Decision tables that map input signals to recommended choices, good/bad example pairs, derivation formulas for calculated fields, and post-write verification steps. See `.plans/LEARNINGS.md` for 10 reusable meta-patterns.
+
+### Skill Updates
+
+- **`/orchestrate`** — Updated for BUILD Dispatch Protocol (specialist tags, RAG→Prompt ordering, completion tracking, multi-failure HARDEN, architecture divergence, parallel write conflicts).
+- **`/decompose`** — Now detects raw requirements (not PRDs) and recommends `/assess` or `/discover` before proceeding.
+
+### Templates
+
+- **CLAUDE.md / AGENTS.md** — BUILD phase updated: specialist dispatch by tag, RAG→Prompt ordering, implementation mapping per specialist type, runtime cost tracking at 50% envelope.
+- All 3 template variants (main `agents/`, `templates/claude/`, `templates/github/`) verified in sync.
+
+### Learnings
+
+- `.plans/LEARNINGS.md` created with 10 meta-patterns from autoimprove: decision tables > option lists, good/bad examples, derivation formulas, post-write verification, REWORK input paths, traits of 100%-baseline agents, RAG→Prompt ordering, BUILD handoff protocol, constraint injection, multi-failure dispatch.
+
+### Files Changed
+
+- 31 files touched (25 modified + 6 new)
+- +1000 lines added, -163 removed across existing files
+- 14 autoimprove directories with backups, results, and changelogs
+
+---
+
 ## [0.10.0] — 2026-03-27
 
 ### Overview

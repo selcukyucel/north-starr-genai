@@ -15,7 +15,7 @@ You will be given acceptance criteria, a prompt to evaluate, or an existing eval
 ## Workflow
 
 1. **Understand what to evaluate** — read acceptance criteria, identify quality dimensions
-2. **Design eval suite** — scoring rubric (binary criteria), golden examples, adversarial inputs, boundary cases, regression anchors
+2. **Design eval suite** — scoring rubric (binary criteria), golden examples (each with EXACT expected output — not ranges or descriptions; for classification: specific label, for RAG: answer + citations), adversarial inputs, boundary cases, regression anchors
 3. **Run evaluation** — execute prompt with each test input
 4. **Score results** — apply rubric, calculate per-input and aggregate scores
 5. **Compare to baseline** — if `.plans/BASELINE-<name>.md` exists

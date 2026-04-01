@@ -47,12 +47,26 @@ Characterize the knowledge base:
 
 Select and configure the chunking approach:
 
-#### Strategy Options
-- **Fixed-size** — split by token count with overlap. Simple, predictable. Best for homogeneous text
-- **Semantic** — split at paragraph/section boundaries. Preserves meaning. Best for structured documents
-- **Recursive** — split by hierarchy (heading > paragraph > sentence). Best for deeply structured docs
-- **Document-aware** — use document structure (tables, lists, code blocks) as split boundaries. Best for mixed-format documents
-- **Sliding window** — overlapping windows of fixed size. Best when context spans chunk boundaries
+#### Strategy Selection
+
+Pick the chunking strategy based on corpus characteristics. If the corpus has mixed document types, use DIFFERENT strategies per type and document which strategy applies to which format.
+
+| Corpus characteristic | Recommended strategy | Why |
+|---|---|---|
+| Homogeneous prose (articles, reports, policies) | Recursive | Preserves heading hierarchy, falls back to paragraph/sentence boundaries |
+| PDFs with tables, figures, or forms | Document-aware | Extracts tables as separate structured chunks, keeps figures with captions, respects page/section breaks |
+| Code files, API docs, technical references | Document-aware | Preserves code blocks, function signatures, parameter lists as atomic units |
+| Legal/contractual documents with clauses | Semantic (clause-aware) | Split at section/clause boundaries to keep legal provisions intact — a clause split mid-sentence is unusable |
+| Short documents (<1 page each) | None (full document as chunk) | If documents fit within chunk size, don't split — splitting destroys context for no benefit |
+| Conversation logs, Q&A pairs | Semantic (turn-aware) | Keep question-answer pairs together as atomic units |
+| Mixed format corpus | Per-format strategy | Apply the matching strategy from above to each document type. Document the mapping in the design file. |
+
+#### Strategy Options (reference)
+- **Fixed-size** — split by token count with overlap. Simple, predictable. Fallback when structure is absent
+- **Semantic** — split at paragraph/section/clause boundaries. Preserves meaning units
+- **Recursive** — split by hierarchy (heading > paragraph > sentence). Good default for structured prose
+- **Document-aware** — use document structure (tables, lists, code blocks) as split boundaries. Required when structure carries meaning
+- **Sliding window** — overlapping windows of fixed size. Use when context frequently spans chunk boundaries
 
 #### Chunking Parameters
 For each strategy, specify:
@@ -99,6 +113,7 @@ Document the selection with rationale and fallback option.
 | Queries contain codes, IDs, exact terms | Sparse retrieval (BM25) |
 | Mixed query types OR accuracy is critical | Hybrid (Reciprocal Rank Fusion with ~0.3 sparse / 0.7 dense weights — tune on eval set) |
 | Queries are vague or ambiguous | Multi-query (HyDE or step-back prompting to expand, then merge results) |
+| Queries require combining facts from multiple documents (multi-hop) | Iterative retrieval: (1) decompose the query into sub-questions, (2) retrieve for each sub-question separately, (3) merge and de-duplicate results. For relationship queries across entities, consider GraphRAG (entity extraction → knowledge graph → graph traversal + vector retrieval). |
 
 #### Retrieval Parameters
 - **Top-K:** Number of chunks to retrieve (starting default: 5-10 for dense retrieval; 20 candidates if feeding into a re-ranking pipeline)
@@ -223,15 +238,51 @@ Write to `.plans/RAG-<name>.md`:
 - Metadata shown: <fields>
 - Model instructions: <how to use context>
 
+## Context Injection Contract
+
+This contract is consumed by the prompt-engineer agent. It defines exactly how retrieved context appears in the prompt so both agents agree on the interface.
+
+- **Format:** <XML tags / markdown headers / JSON>
+- **Opening delimiter:** <e.g., `<context>` or `### Retrieved Documents`>
+- **Closing delimiter:** <e.g., `</context>` or `---`>
+- **Chunk separator:** <e.g., `\n---\n` or `<chunk source="...">...</chunk>`>
+- **Max tokens for context:** <N tokens — must leave room for system prompt, query, and output>
+- **Metadata per chunk:** <fields shown — e.g., source, page, date, relevance score>
+- **No-results fallback:** <exact text to inject when retrieval returns nothing — e.g., "No relevant documents found.">
+- **Truncation strategy:** <what to drop when context exceeds budget — e.g., "drop lowest-relevance chunks from the bottom">
+- **Citation format:** <how the model should cite sources — e.g., `[Source: <name>, p.<page>]`>
+
 ## Cost Estimate
-- Embedding cost: <per-document and monthly>
-- Storage cost: <vector DB monthly>
-- Retrieval cost: <per-query>
-- Re-ranking cost: <per-query, if applicable>
-- **Monthly total:** <estimate>
+
+Calculate each cost from the corpus profile and retrieval parameters. Show your work — do not write "TBD."
+
+**Embedding cost:**
+- Total tokens = document count x avg pages x avg tokens/page (estimate ~500 tokens/page for prose, ~300 for structured/tables)
+- Initial embedding cost = total tokens x embedding model rate (e.g., $0.02/1M tokens for text-embedding-3-small)
+- Monthly re-embedding cost = update frequency x changed documents x tokens x rate
+- Example: 500 docs x 15 pages x 500 tokens = 3.75M tokens. At $0.02/1M = $0.08 initial. Quarterly re-embed of ~50 changed docs = $0.008/quarter.
+
+**Storage cost:**
+- Vector count = total tokens / chunk size (in tokens)
+- Storage = vector count x dimensions x 4 bytes (float32) + metadata overhead (~20%)
+- Monthly cost = storage size x vector DB rate (e.g., Pinecone: ~$0.096/GB/month)
+
+**Retrieval cost:**
+- Per-query compute cost (vector DB query cost, or self-hosted compute)
+- Monthly = expected queries/month x per-query cost
+
+**Re-ranking cost (if applicable):**
+- Per-query = candidates x re-ranker model cost per pair
+- Monthly = queries/month x per-query re-ranking cost
+
+- Embedding cost: $<initial> initial + $<monthly> monthly re-embedding
+- Storage cost: $<monthly>/month
+- Retrieval cost: $<per-query>/query, $<monthly>/month at <N> queries/month
+- Re-ranking cost: $<per-query>/query, $<monthly>/month
+- **Monthly total:** $<sum> (breakdown: embedding $X + storage $Y + retrieval $Z + re-ranking $W)
 
 ## Known Risks
-Check against these common RAG failure modes:
+Check against these common RAG failure modes — mark each as HIGH/MEDIUM/LOW/N-A based on this corpus:
 - **Retrieval failure** — relevant documents exist but aren't retrieved (embedding gap, metadata filter too strict)
 - **Chunk boundary** — answer spans two chunks, neither is complete alone
 - **Semantic gap** — user query phrasing doesn't match document phrasing (jargon, synonyms)
@@ -239,9 +290,20 @@ Check against these common RAG failure modes:
 - **Temporal staleness** — index contains outdated information
 - **Context ignored** — LLM ignores retrieved context in favor of parametric knowledge
 
-Additional project-specific risks:
-- <risk and mitigation>
-- <risk and mitigation>
+Then derive project-specific risks from the corpus profile. Check each signal:
+
+| Corpus signal | Risk to add | Mitigation |
+|---|---|---|
+| Contains PII or regulated data | PII leaking through retrieved chunks | Chunk-level PII filtering, access control on metadata, guardrails-designer review |
+| Documents have multiple versions | Version conflict — old and new info both retrieved | Version metadata + "prefer latest" retrieval filter, or de-duplicate on update |
+| Mixed document formats (PDF + HTML + markdown) | Inconsistent chunking quality across formats | Per-format chunking strategy, parsing quality validation per format |
+| Domain-specific jargon or codes | Semantic gap between user queries and document terminology | Synonym expansion, query rewriting, or hybrid retrieval with BM25 for exact terms |
+| Frequent updates (daily+) | Stale results between re-index cycles | Incremental indexing, freshness metadata, re-index SLA |
+| Small corpus (<100 docs) | Low diversity — retrieval returns near-duplicate chunks | Lower Top-K, stronger diversity filter, consider full-context approach if corpus fits in window |
+| Multi-hop queries expected | Single retrieval pass misses related documents | Iterative retrieval, query decomposition, or GraphRAG for relationship queries |
+| Tables, figures, or structured data in docs | Loss of structure after chunking — tables become meaningless text | Extract tables as structured chunks with schema preserved, separate image/figure handling |
+
+List at least 2 project-specific risks with concrete mitigations. Do NOT just repeat the generic 6 — derive from the actual corpus.
 ```
 
 ### 9. Return Summary
@@ -263,8 +325,10 @@ Key decisions:
 - <decision 1>
 - <decision 2>
 
+Context Injection Contract: defined in RAG design file — prompt-engineer MUST read this before designing the prompt
+
 Coordination needed:
-- prompt-engineer: context injection format defined
+- prompt-engineer: MUST read Context Injection Contract section before designing prompt (format, delimiters, token budget, no-results fallback)
 - guardrails-designer: retrieval security review recommended
 ```
 

@@ -82,6 +82,11 @@ The inverted story is derived from the pre-mortem and persona inversion. It name
 
 Fill in `[specific fallback]` and `[specific notification]` with concrete behaviors for this story — not boilerplate.
 
+BAD: "must show an error message and notify the user" (vague — what error? what notification?)
+GOOD: "must return the document unclassified with status 'NEEDS_MANUAL_REVIEW', add it to the compliance officer's review queue, and display: 'This document could not be confidently classified. It has been queued for manual review.'"
+
+The fallback must name: (1) what state the data enters (queue, flag, hold), (2) who is notified and how (queue, email, dashboard alert), (3) what the user sees (specific message text).
+
 - **Include technical notes** — brief pointers to implementation approach, APIs, components
 
 Assign story IDs: `S1.1` (epic 1, story 1), `S1.2`, `S2.1`, etc. Epic EA stories use `SA.1`-`SA.6`.
@@ -382,12 +387,12 @@ In refine mode, the orchestrator feeds a single user story into this agent for e
 
 #### 2. Enrich with AI-Specific Criteria
 
-Add to the story's acceptance criteria:
+Add to the story's acceptance criteria. If the story doesn't specify values, propose defaults based on the task type and flag as "proposed — confirm with architect":
 
-- **Latency threshold:** Maximum acceptable end-to-end latency (e.g., "p95 < 2s")
-- **Accuracy threshold:** Minimum acceptable accuracy score (e.g., "85% on eval suite")
-- **Cost envelope:** Maximum acceptable cost per request and monthly budget
-- **Model hints:** Suggested model(s) based on task complexity and cost constraints
+- **Latency threshold:** Interactive UI: p95 < 2s. Background/batch: p95 < 30s. Document analysis: p95 < 10s. Default: p95 < 5s.
+- **Accuracy threshold:** Safety/compliance-critical: ≥95%. Business-critical: ≥90%. Convenience/suggestion: ≥80%. Default: ≥85%.
+- **Cost envelope:** Derive from volume × per-call cost. If volume unknown, state assumption.
+- **Model hints:** Simple tasks: Haiku/GPT-4o-mini. Moderate: Sonnet/GPT-4o. Complex: Opus/reasoning. Flag as "to be validated by ai-architect."
 - **Security surface:** What attack vectors this story introduces (PII exposure, injection risk, data access)
 
 #### 3. Assess Readiness
@@ -480,10 +485,21 @@ In incorporate-feedback mode, the orchestrator routes downstream agent feedback 
 
 #### 2. Revise Story
 
-Update the refined story based on feedback:
-- Adjust acceptance criteria (thresholds, new criteria)
+Translate the specific feedback into specific story changes. Do NOT make generic revisions — match the revision to the failure pattern:
+
+| Feedback pattern | Story revision |
+|---|---|
+| Eval accuracy below threshold on a specific input category | Add acceptance criterion targeting that category. Note failing examples for prompt-engineer. |
+| Eval accuracy below threshold overall | Reconsider threshold or recommend model upgrade in hints. |
+| Cost overrun | Reduce cost envelope, suggest cheaper model or caching/batching in technical notes. |
+| Guardrail violation (PII, injection) | Add security acceptance criterion. Update security surface. |
+| Latency breach | Add latency constraint or suggest async/caching in technical notes. |
+| Architecture conflict | Revise scope to conform or propose override with rationale. |
+
+Always include: the exact failing metric (before → target), the specific input pattern that failed, and which downstream agent should see the revised story next.
+
+Additional revisions:
 - Update cost envelope if budget feedback received
-- Update model hints if accuracy/cost trade-off changed
 - Add new constraints discovered during downstream work
 - Flag cross-story impacts if the revision affects sibling stories
 

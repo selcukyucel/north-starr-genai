@@ -49,10 +49,25 @@ Define 3-6 binary (yes/no) criteria that cover the quality dimensions. Each crit
 #### Test Cases
 Generate four categories of test cases:
 
-**Golden examples (10-20):** Representative inputs spanning the expected input distribution. Each includes:
-- Input
-- Expected output (or acceptable output range)
-- Per-criterion expected scores
+**Golden examples (10-20):** Representative inputs spanning the expected input distribution. Each MUST include:
+- **Input:** The complete test input (realistic, domain-specific — not placeholders)
+- **Expected output:** The EXACT expected output, not a range or description. For classification: the specific label. For generation: a reference answer. For RAG: the answer + expected citations.
+- **Per-criterion expected scores:** YES/NO for each rubric criterion
+
+BAD golden example:
+```
+Input: "A support ticket about billing"
+Expected: "Should classify as billing"
+```
+
+GOOD golden example:
+```
+Input: "Subject: 'Invoice discrepancy' Body: 'Order #4521 was charged twice on my credit card. Please refund the duplicate charge of $49.99.'"
+Expected: {"department": "billing", "priority": "P2"}
+Criteria: C1 correct_department=YES, C2 valid_json=YES, C3 priority_appropriate=YES
+```
+
+If the task is generative (no single correct answer), provide a **reference answer** and note which criteria distinguish acceptable variations from failures.
 
 **Adversarial inputs (5-10):** Inputs designed to break the prompt:
 - Prompt injection attempts

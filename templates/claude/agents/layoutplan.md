@@ -34,7 +34,13 @@ For each task, identify:
 - Subtasks (concrete, checkable items — each subtask must have a clear done condition that a reviewer can verify in under 30 seconds, e.g., "file X exists", "test Y passes", "function Z returns type T". Never use vague subtasks like "audit", "review", "update documentation" without specifying the exact deliverable.)
 - Key files that will be created or modified
 - Dependencies on other tasks (what must come first)
-- Description sufficient for a fresh session with no prior context
+- Description sufficient for a fresh session with no prior context. Every task description MUST include:
+  - **What** to build or change (specific behavior, not just "implement X")
+  - **Where** in the codebase (file paths or module names)
+  - **Inputs/outputs** (data format, expected types, example values)
+  - **Constraints** (model, latency, cost, accuracy targets if AI-related)
+  - **How to verify** (what passing looks like — specific test, metric threshold, or observable behavior)
+  A fresh session should be able to start the task after reading ONLY the plan file — no need to re-read the inversion analysis, ADR, or story.
 - **Cost Envelope:** if this task involves model calls, note the estimated cost impact
 
 **Structure each task as test-first (TDD) or eval-first (for AI components):**
@@ -52,14 +58,36 @@ Example:
 
 Skip test-first only for tasks that don't produce testable code (documentation, config, CI/build scripts).
 
-Map risks from the inversion analysis to specific tasks:
+Map risks from the inversion analysis to specific tasks. Every risk MUST appear in at least one task — either as the task's primary focus or as a subtask/test case:
 - A risk about prompt fragility → a prompt testing task
 - A risk about hallucination → a validation/guardrail task
 - A risk about cost → a cost estimation subtask
 - A risk about model drift → a monitoring/baseline task
 - A risk about data pipeline → a data validation task
 - A risk about breaking existing behavior → a dedicated test task
+- A risk about chunking/retrieval quality → a retrieval evaluation subtask (test with golden question set)
+- A risk about embedding model migration or vendor lock-in → a migration/abstraction task (adapter layer, rollback plan)
+- A risk about PII or data sensitivity → a data handling subtask (filtering, masking, access control)
+- A risk about infrastructure (scaling, latency, resource limits) → a load test or resource sizing subtask
 - Edge cases from the inversion → specific test cases in the RED step
+
+After writing the plan, verify: scan the inversion analysis risks section and confirm each risk has a corresponding task number noted in the plan's "Risks & Constraints" section.
+
+**Tag each task with required specialists:**
+For each task, identify which specialist agents need to produce design artifacts before implementation can begin. This gives the orchestrator an explicit dispatch list:
+- Task involves prompt design/changes → `prompt-engineer` (specialist input: what the prompt should do)
+- Task involves RAG/retrieval pipeline → `rag-advisor` (specialist input: what corpus and retrieval requirements)
+- Task involves external API integration → `integration-planner` (specialist input: which APIs and what contracts)
+- Task involves AI-powered UI design → `agentic-designer` (specialist input: what interface patterns are needed)
+- Task is pure implementation with no AI-specific design → `none`
+
+The `**Specialist input:**` field must be specific enough that the specialist can start working without reading the full plan. Include the task's domain context, not just the agent's generic job.
+
+BAD: "Specialist input: design the classification prompt"
+GOOD: "Specialist input: design a zero-shot or few-shot classification prompt that takes a support ticket (subject + body, avg 200 tokens) and outputs one of 8 department labels + priority (P1-P4) as JSON. Target accuracy: 90% on eval set. Model: Claude Haiku."
+
+BAD: "Specialist input: design the RAG pipeline"
+GOOD: "Specialist input: design chunking + retrieval for ~500 HR policy PDFs (avg 15 pages each, updated quarterly). Must support question-answering with source citations. PII present in benefits docs — flag for guardrails review."
 
 Order tasks by dependency. Keep the total manageable — if you have more than 6 tasks, group related work.
 
@@ -94,6 +122,8 @@ Write `.plans/PLAN-<name>.md` (using the same `<name>` as the inversion file) wi
 **Status:** PENDING
 **Files:** <key files>
 **Blocked by:** <task numbers, if any>
+**Specialists needed:** <prompt-engineer / rag-advisor / integration-planner / agentic-designer / none>
+**Specialist input:** <what the specialist should design — one sentence describing the deliverable>
 **Cost Envelope:** <estimated cost impact if applicable>
 
 <Description — self-contained enough for a fresh session to execute>

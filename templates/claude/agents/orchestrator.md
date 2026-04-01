@@ -84,15 +84,20 @@ DESIGN → HUMAN:
 
 PLAN → BUILD:
   condition: plan file exists at .plans/PLAN-<name>.md AND operator approves plan
-  action: dispatch to specialist agents per plan tasks (parallel where independent)
+  action: read plan tasks, extract specialist tags, dispatch BUILD with explicit payload (see BUILD Dispatch Protocol)
 
 BUILD → HARDEN:
-  condition: all plan tasks marked complete + tests pass
+  condition: all specialist outputs received + all plan tasks marked complete + tests pass
   action: dispatch to eval-designer, guardrails-designer, ai-ops (all three in parallel)
 
 BUILD → HUMAN:
-  condition: external access needed, OR novel problem with no established pattern
-  action: format operator escalation
+  condition: external access needed, OR specialist reports BLOCKED, OR novel problem with no established pattern
+  action: format operator escalation (include which specialist is blocked and why)
+
+BUILD (partial) → HUMAN:
+  condition: integration-planner reports BLOCKED (missing credentials/access)
+  action: move story to HUMAN with credential request payload, start 24h SLA timer
+  note: other specialists may continue if their work is independent of the blocked specialist
 
 HARDEN → DELIVER:
   condition: ALL three gates pass (eval-designer, guardrails-designer, ai-ops)
@@ -179,7 +184,27 @@ ai-ops:             PASS / FAIL (with failure details)
 | FAIL | any | any | → REWORK to prompt-engineer (eval failures are prompt/output issues) |
 | PASS | FAIL | any | → REWORK to ai-architect (guardrail failures are design issues) |
 | PASS | PASS | FAIL | → REWORK to ai-ops for infra fixes, or ai-architect if cost overrun |
-| Multiple FAIL | | | → REWORK addressing highest-severity failure first |
+| Multiple FAIL | | | → REWORK, see multi-failure rules below |
+
+**Multi-failure rules (when 2+ gates fail):**
+
+If the failures route to DIFFERENT agents (e.g., eval → prompt-engineer, ops → ai-architect):
+- Dispatch to BOTH agents in parallel — each gets a separate rework payload targeting their specific failure
+- Each payload includes only the failure relevant to that agent
+- Both must complete before re-entering HARDEN
+
+If the failures route to the SAME agent:
+- Send a single rework payload listing all failures, ordered by severity
+- The agent addresses all failures in one pass
+
+**Severity ranking** (use to order failures within a payload):
+1. Security vulnerability (highest — exploitable)
+2. PII / compliance violation
+3. Cost overrun (budget is a hard constraint)
+4. Accuracy below threshold
+5. Format / schema violation
+6. Latency above threshold
+7. Infrastructure issue (lowest — usually tunable)
 
 **On second failure of the same gate on the same issue:**
 - Do NOT rework again. Escalate to operator with full context:
@@ -209,6 +234,80 @@ Route feedback to the agent whose output caused the failure. Always include:
 | Infrastructure / deployment issue | ai-ops | "Container OOM at 512MB — need resource tuning or batching" |
 | Security vulnerability | guardrails-designer | "Prompt injection possible via user input field" |
 
+## BUILD Dispatch Protocol
+
+When transitioning a story from PLAN → BUILD, follow this protocol to ensure specialists know what to produce and Claude Code knows when and how to implement.
+
+### Step 1: Parse Plan for Specialist Tags
+
+Read `.plans/PLAN-<name>.md` and extract the `**Specialists needed:**` field from each task. If tasks lack specialist tags (older plan format), infer from task content:
+- Task mentions prompt design/changes → `prompt-engineer`
+- Task mentions RAG, retrieval, embeddings, chunking → `rag-advisor`
+- Task mentions external API, integration, credentials → `integration-planner`
+- Task mentions UI/UX for AI interface → `agentic-designer`
+- Task has no AI-specific design work → no specialist needed (direct implementation)
+
+### Step 2: Dispatch Specialists with Explicit Payload
+
+For each specialist, include in the dispatch:
+
+```
+Specialist: <agent name>
+Story: <story-id> — <story title>
+Plan: .plans/PLAN-<name>.md
+Tasks: <list of task numbers this specialist serves>
+Output path: .plans/<SPECIALIST-OUTPUT>-<story-name>/
+  - prompt-engineer → .plans/PROMPTS-<story-name>/
+  - rag-advisor → .plans/RAG-<story-name>.md
+  - integration-planner → .plans/INTEGRATION-<story-name>.md
+  - agentic-designer → .plans/UI-<story-name>.md
+Constraints: <any cost envelope, prior decisions, or learnings relevant to this specialist>
+```
+
+### Step 3: Dispatch Order (RAG ↔ Prompt Coordination)
+
+If both `rag-advisor` and `prompt-engineer` are needed for the same story:
+1. Dispatch `rag-advisor` FIRST
+2. Wait for rag-advisor to complete and write its Context Injection Contract (in `.plans/RAG-<name>.md` under "## Context Injection Contract")
+3. THEN dispatch `prompt-engineer` with instruction: "Read the RAG context injection contract at `.plans/RAG-<name>.md` before designing the prompt"
+
+All other specialists may run in parallel.
+
+### Step 4: Track Specialist Completion
+
+Update `.plans/PIPELINE-STATUS.md` with a specialist completion tracker for the story:
+
+```markdown
+### BUILD Specialists — <story-id>
+
+| Specialist | Status | Output Path | Completed |
+|---|---|---|---|
+| rag-advisor | DONE / IN_PROGRESS / BLOCKED | .plans/RAG-<name>.md | <timestamp or —> |
+| prompt-engineer | DONE / IN_PROGRESS / BLOCKED | .plans/PROMPTS-<name>/ | <timestamp or —> |
+| integration-planner | DONE / IN_PROGRESS / BLOCKED | .plans/INTEGRATION-<name>.md | <timestamp or —> |
+```
+
+### Step 5: Signal Implementation Start
+
+When ALL specialists for a story are DONE (or DONE + BLOCKED with human escalation for the blocked ones):
+
+1. Update PIPELINE-STATUS.md: "All specialists complete — ready for implementation"
+2. The implementation instruction is: **"Read all specialist outputs for story `<story-id>` and implement following the plan's task breakdown. For each specialist output, follow the implementation mapping in CLAUDE.md/AGENTS.md BUILD phase."**
+
+If a specialist is BLOCKED (e.g., integration-planner waiting on credentials):
+- Other specialists' outputs can still be implemented
+- Mark the blocked tasks in the plan as BLOCKED
+- Implementation proceeds on unblocked tasks
+- When credentials arrive, story re-enters BUILD for the blocked tasks only
+
+### Step 6: Handle Specialist Failures
+
+If a specialist agent fails mid-execution (error, timeout, or incoherent output):
+1. Log the failure in PIPELINE-STATUS.md
+2. Retry once with the same payload
+3. If retry fails, escalate to operator with the failure details
+4. Do NOT block other specialists — they continue independently
+
 ## Conflict Detection
 
 On every state transition, check for conflicts with other active stories.
@@ -224,9 +323,9 @@ On every state transition, check for conflicts with other active stories.
 
 1. Read `.plans/DECISIONS.md` for existing architecture decisions
 2. If the current story's design contradicts a prior decision:
-   - If the prior decision is from a completed or active story: current story must conform
-   - If the prior decision is from a cancelled story: flag for human review
-   - If no prior decision exists and two stories propose different solutions: escalate to operator
+   - If the prior decision is from a completed or active story: **inject the constraint into the current story's DESIGN dispatch.** Tell ai-architect: "Prior decision `ADR-<name>` mandates <constraint>. This story must conform. If conforming is not feasible, include an explicit override proposal in the ADR with rationale, and the orchestrator will escalate to operator for approval." Update PIPELINE-STATUS.md with a note: "Design constrained by ADR-<prior-name>."
+   - If the prior decision is from a cancelled story: flag for human review — "Prior decision from cancelled story <id>. Confirm whether it still applies."
+   - If no prior decision exists and two stories propose different solutions: escalate to operator using the Operator Escalation Format. Include both proposals as options, recommend the one with lower cross-story impact, and note which stories would be affected by each choice. Set both stories to HUMAN until the operator decides.
 
 ### Resource Lock
 
@@ -245,9 +344,14 @@ On every state transition, check for conflicts with other active stories.
 
 ### Parallel Write Conflict
 
-1. If two stories in BUILD touch the same files (check plan task file lists):
-   - Serialize them: second story waits until first clears HARDEN
-   - Set second story to BLOCKED with reason "parallel write conflict with <story-id>"
+Check at TWO points: (a) when a story enters BUILD, and (b) when a new story's plan is finalized at PLAN.
+
+1. Read the file lists from the current story's plan tasks (`**Files:**` field)
+2. Compare against file lists of ALL stories currently in BUILD or HARDEN
+3. If overlap is found:
+   - Set the later story to BLOCKED with reason "parallel write conflict with <story-id> on files: <list>"
+   - The blocked story auto-resumes when the conflicting story clears HARDEN
+   - Update PIPELINE-STATUS.md with the blocker and affected files
 
 ## SLA Enforcement
 
