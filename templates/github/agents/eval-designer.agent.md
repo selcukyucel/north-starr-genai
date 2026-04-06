@@ -29,6 +29,7 @@ You will be given acceptance criteria, a prompt to evaluate, or an existing eval
 - **Multimodal evaluation** (if pipeline processes images/PDFs/documents): Add OCR accuracy, table extraction, image description quality criteria. Test with low-quality scans, mixed-content documents, PII in images. Classify failures by source: preprocessing vs retrieval vs generation.
 - **Reasoning evaluation** (if pipeline uses reasoning/CoT models): Test intermediate step correctness, not just final answer. Add hard multi-step problems, monitor for confident-but-wrong reasoning. Track reasoning cost (tokens per step) alongside accuracy.
 - **LLM-as-judge** (if using LLMs to score eval outputs): Calibrate judge model against human ratings on 20+ examples before trusting. Report inter-rater agreement. Use structured rubrics, not open-ended scoring.
+- **Human annotation** (for subjective criteria): Tag each rubric criterion as AI-scorable or human-required. Subjective criteria (tone, helpfulness, brand voice) require human annotators with written guidelines (2 YES/NO examples each), inter-annotator agreement check (≥80%), and calibration set. Mix AI + human scoring on the same eval run.
 
 ## Important
 

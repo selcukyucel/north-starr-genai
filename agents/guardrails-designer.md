@@ -26,8 +26,8 @@ Also read:
 ### 1. Inventory Existing Guardrails
 
 Scan the codebase for implemented guardrails:
-- **Input filtering:** Search for input validation, sanitization, length checks, PII detection
-- **Output filtering:** Search for content filtering, format validation, confidence thresholds
+- **Input filtering:** Search for input validation, sanitization, length checks, PII detection, secrets detection (API keys, tokens, credentials)
+- **Output filtering:** Search for content filtering, format validation, confidence thresholds, bias detection, relevance checking, generated code security scanning
 - **Prompt injection defenses:** Search for input/output separation, instruction hierarchy, sandboxing
 - **Audit logging:** Search for logging of AI inputs, outputs, decisions, errors
 - **Rate limiting:** Search for per-user or per-endpoint rate limits on AI calls
@@ -123,6 +123,21 @@ For each output guardrail, verify behavior:
 > - Standard outputs (classification, routing, summarization): confidence >= 0.70
 > - Low-stakes outputs (suggestions, drafts, brainstorming): confidence >= 0.50
 
+#### Relevance Check (if the pipeline serves free-form user queries)
+- Test with queries that should produce on-topic responses — verify relevance score exceeds threshold
+- Test with queries designed to elicit off-topic tangents — verify the system catches or flags low-relevance outputs
+- Verify: off-topic responses trigger the specified action (flag, redirect, or block)
+
+#### Bias Detection (if the guardrail spec includes bias scanning)
+- Generate demographic-variant input pairs (same query with different names, pronouns, or cultural contexts) and compare output consistency
+- Test with inputs touching sensitive demographic topics — verify outputs are neutral and balanced
+- Verify: biased outputs trigger the specified action and are logged for review
+
+#### Generated Code Security (if the automation produces executable code)
+- Test with prompts that are likely to elicit insecure code patterns (SQL queries from user input, HTML rendering, file operations)
+- Verify: generated code is scanned for common vulnerabilities (injection, XSS, hardcoded credentials, path traversal)
+- Verify: insecure code triggers the specified action (block, annotate, or auto-fix)
+
 #### Hallucination Checks
 - Test with questions about facts the model shouldn't know
 - Test with requests for specific data that should come from retrieval
@@ -177,13 +192,16 @@ Write to `.plans/GUARDRAILS-REPORT-<name>.md`:
 
 | Pipeline Stage | Guardrail | Required | Implemented | Status |
 |---------------|-----------|----------|-------------|--------|
-| Input ingestion | PII Detection | Yes | Yes/No | PASS/FAIL |
+| Input ingestion | PII/Secrets Detection | Yes | Yes/No | PASS/FAIL |
 | Input ingestion | Input Validation | Yes | Yes/No | PASS/FAIL |
 | Before model call | Prompt Injection Defense | Yes | Yes/No | PASS/FAIL |
 | Before model call | Rate Limiting | <> | <> | <> |
 | Model output | Content Filtering | <> | <> | <> |
 | Model output | Format Validation | <> | <> | <> |
 | Model output | Confidence Thresholds | <> | <> | <> |
+| Model output | Relevance Check | <> | <> | <> |
+| Model output | Bias Detection | <> | <> | <> |
+| Model output | Code Security (if applicable) | <> | <> | <> |
 | Model output | Hallucination Check | <> | <> | <> |
 | Before user delivery | Human Escalation | <> | <> | <> |
 | Cross-cutting | Audit Logging | <> | <> | <> |

@@ -129,6 +129,35 @@ For each strategy, specify:
 > - Metadata to attach: source document, section title, page number, ingestion date
 > - Pre-processing: strip boilerplate headers/footers, normalize whitespace, extract tables as separate chunks
 
+#### Contextual Retrieval (Pre-Embedding Context Enrichment)
+
+Chunking strips document-level context — a chunk about "the policy" loses which policy, from which document, in which section. Contextual retrieval fixes this at ingestion time: before embedding each chunk, use an LLM to generate a short context paragraph situating the chunk within its source document, then prepend that context to the chunk text before embedding.
+
+**How it works:**
+1. For each chunk, send the full (or summarized) source document + the chunk to an LLM
+2. Prompt: "Given this document, write a short context (2-3 sentences) explaining where this chunk fits — what document it's from, what section, and what topic it addresses."
+3. Prepend the generated context to the chunk text: `{context}\n\n{chunk}`
+4. Embed the contextualized chunk (not the raw chunk)
+
+**When to use:**
+
+| Signal | Use contextual retrieval? |
+|--------|--------------------------|
+| Chunks frequently lack enough context to be useful alone | Yes — this is the primary use case |
+| Documents are long with many similarly-worded sections | Yes — context disambiguates which section a chunk belongs to |
+| Parent-child chunking already provides sufficient context | Maybe not — test both, parent-child may be enough |
+| Corpus is small (<50 docs) and chunks are large (>512 tokens) | Probably not — chunks already carry enough context |
+| Ingestion cost budget is very tight | No — adds one LLM call per chunk at ingestion time |
+
+**Cost:** One LLM call per chunk at ingestion time (not at query time). For a 10,000-chunk corpus using a cheap model (e.g., Claude Haiku, GPT-4o-mini): ~$1-5 total. This is a one-time ingestion cost, not per-query.
+
+> **Starting defaults (tune on your eval set):**
+> - Context model: use the cheapest capable model (Claude Haiku or GPT-4o-mini) — context generation doesn't need frontier intelligence
+> - Context length: 2-3 sentences (~50-75 tokens). Longer context dilutes the chunk's semantic signal in the embedding
+> - Cache the source document summary if the full document exceeds the context model's window
+> - Combine with BM25 (hybrid retrieval) for best results — Anthropic reports up to 49% retrieval failure reduction when combining contextual retrieval with BM25
+> - Reference: [Anthropic, "Introducing Contextual Retrieval" (2024)](https://www.anthropic.com/news/contextual-retrieval)
+
 ### 5. Select Embedding Model
 
 Choose the embedding model based on requirements:
@@ -202,6 +231,44 @@ Standard vector search retrieves individual chunks independently. GraphRAG organ
 - **Similarity threshold:** Minimum score to include a chunk (starting default: 0.65 cosine similarity — drop results below this to prevent irrelevant context from reaching the prompt)
 - **Diversity filter:** Avoid returning near-duplicate chunks from the same source
 - **Metadata filters:** Pre-filter by date, source, category before similarity search
+
+#### Self-Query (LLM-Powered Metadata Filter Extraction)
+
+Static metadata filters require the application to hardcode which filters to apply. Self-query makes filters dynamic: an LLM decomposes the user's natural language query into (1) a cleaned semantic query for vector search and (2) structured metadata filters extracted from the query itself.
+
+**How it works:**
+1. User query arrives: "Find the onboarding policy updated after January 2025"
+2. An LLM extracts structured filters from the query using a schema you define
+3. Output: `semantic_query = "onboarding policy"`, `filters = {doc_type: "policy", updated_after: "2025-01-01"}`
+4. Execute vector search on `semantic_query` with `filters` applied as metadata pre-filters
+
+**Structured output schema (Pydantic example):**
+```python
+class SelfQueryResult(BaseModel):
+    """LLM-extracted query decomposition for self-query retrieval."""
+    semantic_query: str  # Cleaned query for vector similarity search
+    filters: dict[str, str | list[str] | None] = {}  # Metadata filters extracted from query
+    filter_logic: Literal["AND", "OR"] = "AND"  # How to combine multiple filters
+    confidence: Literal["high", "medium", "low"] = "high"  # LLM confidence in filter extraction
+```
+
+**When to use:**
+
+| Signal | Use self-query? |
+|--------|----------------|
+| Users frequently include filterable attributes in natural language queries | Yes — primary use case |
+| Rich metadata exists on chunks (dates, categories, sources, doc types) | Yes — filters need metadata to filter on |
+| Queries are purely semantic with no filterable attributes | No — adds latency with no benefit |
+| Metadata schema is unstable or inconsistent across documents | Not yet — stabilize metadata first |
+
+**Cost:** One LLM call per query (structured output, typically <100 tokens). With a fast model (Claude Haiku, GPT-4o-mini), adds ~100-200ms and <$0.001 per query.
+
+> **Starting defaults (tune on your eval set):**
+> - Extraction model: cheapest model with reliable structured output (Claude Haiku or GPT-4o-mini with JSON mode)
+> - Define the filter schema from your chunk metadata fields — only expose fields that actually exist in your index
+> - Fall back to unfiltered vector search when confidence is "low" — a wrong filter is worse than no filter
+> - Log extracted filters for debugging — when retrieval fails, check if the LLM extracted incorrect filters
+> - Combine with query rewriting: rewrite first, then self-query on the rewritten query
 
 ### 7. Configure Re-Ranking
 
@@ -297,6 +364,7 @@ Write to `.plans/RAG-<name>.md`:
 - Overlap: <N> tokens (<percentage>%)
 - Metadata: <fields>
 - Pre-processing: <steps>
+- Contextual retrieval: <enabled/disabled — if enabled: context model, context length, cost estimate>
 
 ## Embedding Model
 - Model: <name>
@@ -310,6 +378,7 @@ Write to `.plans/RAG-<name>.md`:
 - Similarity threshold: <N>
 - Diversity filter: <yes/no, config>
 - Metadata filters: <if applicable>
+- Self-query: <enabled/disabled — if enabled: extraction model, filter schema fields, fallback behavior>
 
 ## Re-Ranking
 - Enabled: <yes/no>

@@ -34,6 +34,40 @@ Also read:
 - If updating, read the existing `.plans/OPS-<name>.md` for current configuration
 - Identify all AI components that need monitoring (models, prompts, retrieval, integrations)
 
+### 1b. Design Tracing & Instrumentation
+
+Before defining what metrics to monitor, specify how the pipeline captures trace data. Observability is a **design-time decision** — retrofitting tracing into a production pipeline is expensive and error-prone.
+
+#### Per-Call Trace Requirements
+
+Every LLM call, retrieval query, and guardrail check should emit a structured trace containing:
+
+| Field | Required | Why |
+|---|---|---|
+| **Trace ID** | Yes | Links all steps in a single user request |
+| **Span ID + parent** | Yes | Hierarchical timing (retrieval → re-rank → generation as nested spans) |
+| **Timestamps** (start, end) | Yes | Latency per step, not just end-to-end |
+| **Model name + version** | Yes | Correlates accuracy drift with model changes |
+| **Prompt version / hash** | Yes | Correlates quality changes with prompt edits |
+| **Token counts** (input, output) | Yes | Cost tracking, context window monitoring |
+| **Input/output content** (or hash) | Conditional | Required for eval sampling and debugging; omit or redact if PII risk — coordinate with guardrails-designer |
+| **Retrieval metadata** | If RAG | Chunks retrieved, similarity scores, filters applied, re-ranking results |
+| **Guardrail triggers** | If guardrails | Which guardrails fired, action taken, input that triggered them |
+| **Error details** | On failure | Error type, retry count, fallback used |
+
+#### Instrumentation Approach
+
+Specify how traces are captured in the design file. Common patterns:
+
+- **Decorator-based:** Wrap each pipeline step with a tracing decorator (e.g., `@observe()`, `@trace`). Least invasive, works well for Python pipelines with clear function boundaries.
+- **Middleware-based:** Intercept at the HTTP/API layer. Good for service-oriented architectures.
+- **SDK-integrated:** Use the LLM provider's built-in callbacks or hooks (e.g., LangChain callbacks, OpenAI response headers). Captures token counts automatically but may miss custom pipeline steps.
+- **Manual spans:** Explicitly open/close spans in code. Most control, most boilerplate.
+
+> **Starting default:** Decorator-based tracing on all LLM calls + retrieval queries. Log to structured JSON. Capture token counts from API response headers. Redact input/output content for PII-sensitive pipelines (log hashes instead). Coordinate with guardrails-designer on what can be logged.
+
+Include the instrumentation approach in the ops design file (`.plans/OPS-<name>.md`) so developers know what to implement alongside the pipeline, not after it.
+
 ### 2. Define Key Metrics
 
 Identify what to measure for each AI component:
@@ -197,6 +231,12 @@ Write to `.plans/OPS-<name>.md`:
 | Component | Type | Metrics |
 |-----------|------|---------|
 | <name> | Model/RAG/Integration | <key metrics> |
+
+## Tracing & Instrumentation
+- Instrumentation approach: <decorator/middleware/SDK/manual>
+- Per-call fields captured: <list>
+- Content logging: <full / hashed / redacted — with rationale>
+- Storage: <where traces are stored>
 
 ## Key Metrics
 ### Cost
