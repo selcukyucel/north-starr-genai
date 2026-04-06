@@ -4,6 +4,75 @@
 
 An agentic AI development agency framework — North Starr plans, designs, validates, and orchestrates while Claude Code writes code in YOUR codebase. Works with any project: RAG pipelines, agent harnesses, multi-agent systems, prompt chains, or AI platform components.
 
+## Agent Interaction Map
+
+```
+                    ┌──────────┐
+                    │ /assess  │ ← classifies project type
+                    └────┬─────┘
+                         │
+                    ┌────┴─────┐
+                    │/discover │ ← elicits requirements (if needed)
+                    └────┬─────┘
+                         │
+                    ┌────┴──────┐
+                    │/decompose │ ← PRD → stories
+                    └────┬──────┘
+                         │
+                  ┌──────┴──────┐
+                  │ ORCHESTRATOR │
+                  └──────┬──────┘
+                         │
+              ┌──────────┴──────────┐
+              │    chief-ai-po      │ TRIAGE
+              └──────────┬──────────┘
+                         │
+              ┌──────────┴──────────┐
+              │    ai-architect     │ DESIGN
+              └────┬──────────┬─────┘
+                   │          │
+         ┌─────────┘          └──────────┐
+         ▼                               ▼
+   ┌──────────┐                 ┌───────────────┐
+   │ ai-invert│                 │cost-estimator │
+   └────┬─────┘                 └───────┬───────┘
+        └───────────────┬───────────────┘
+                        ▼
+                 ┌─────────────┐
+                 │  layoutplan │ PLAN (tags tasks with specialists)
+                 └──────┬──────┘
+                        │
+       ┌────────────────┼────────────────┬──────────────┐
+       ▼                ▼                ▼              ▼
+┌────────────┐  ┌────────────┐  ┌───────────────┐ ┌──────────┐
+│  prompt-   │  │   rag-     │  │ integration-  │ │ agentic- │
+│  engineer  │  │  advisor   │  │   planner     │ │ designer │
+└─────┬──────┘  └─────┬──────┘  └───────┬───────┘ └────┬─────┘
+      └───────────────┼─────────────────┼───────────────┘
+                      ▼ BUILD
+        ┌─────────────┼──────────────┐
+        ▼             ▼              ▼
+┌────────────┐ ┌────────────┐ ┌───────────┐
+│   eval-    │ │ guardrails-│ │  ai-ops   │
+│  designer  │ │  designer  │ │ (monitor) │
+└─────┬──────┘ └──────┬─────┘ └─────┬─────┘
+      │          ┌────┴─────┐       │
+      │          │  prompt- │       │
+      │          │adversary │       │
+      │          └──────────┘       │
+      └───────────────┼────────────┘
+                      ▼ HARDEN
+               ┌────────────┐
+               │demo-builder│ DELIVER
+               └────────────┘
+
+Feedback loops:
+  eval fails ──→ prompt-engineer (fix prompt)
+  guardrails fail ──→ ai-architect (fix design)
+  cost overrun ──→ ai-architect (cheaper model)
+  same gate fails twice ──→ HUMAN escalation
+```
+
 ## What It Does
 
 North Starr GenAI is the **brain** of an AI development agency. It doesn't generate code — it generates the specs, designs, evaluations, and guardrails that make AI code production-grade.
