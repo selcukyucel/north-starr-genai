@@ -2,6 +2,58 @@
 
 All notable changes to north-starr-genai will be documented in this file.
 
+## [0.12.0] — 2026-04-06
+
+### Overview
+
+RAG, security, evaluation, and observability enrichment release. Adds 1 new skill, enriches 6 agents and 3 skills with production RAG techniques, security guardrail categories, human annotation workflows, and tracing instrumentation design. Closes gaps identified from RAG optimization research, LLM Guard security patterns, and LangFuse evaluation workflows.
+
+### New Skill (1)
+
+- **`/ai-test`** — Generate executable pytest files for deterministic AI outputs. Produces assertion-based tests for classification, extraction, routing, and structured output components. Complements `/eval-suite` (statistical evaluation for non-deterministic outputs) with hard-assertion tests that run in CI/CD. Supports converting eval suite golden examples into pytest code, fixture file generation, and conftest.py scaffolding.
+
+### RAG Advisor Enrichments
+
+- **Data ingestion pipeline** — Added to deployed agent (was only in template). Covers source connectors, parsing (PDF/HTML/DOCX), cleaning, de-duplication, quality validation, metadata extraction, staleness/refresh strategy, access control, and data quality monitoring. Parsing quality is the #1 silent RAG failure.
+- **Multimodal input handling** — Added to deployed agent. Covers PDFs with text/images/charts, table extraction as structured data, scanned document OCR, image descriptions via vision models, and quality checks (OCR confidence, table structure validation).
+- **Contextual retrieval** — New chunking enhancement. Pre-embedding context enrichment using a cheap LLM to situate each chunk within its source document before embedding. Anthropic reports up to 49% retrieval failure reduction when combined with BM25. Includes when-to-use decision table, cost estimate (~$1-5 per 10K chunks), and starting defaults.
+- **Self-query** — New retrieval technique. LLM-powered metadata filter extraction from natural language queries. Decomposes queries into semantic search + structured filters using a Pydantic schema. Includes when-to-use table, fallback on low confidence, and cost estimate (<$0.001/query).
+
+### Security Guardrail Enrichments
+
+- **Secrets detection** — PII detection scope expanded to include API keys, access tokens, passwords, connection strings, and private keys as a distinct category alongside traditional PII.
+- **Bias detection** (new guardrail 4f) — Output scanning for demographic bias across gender, race/ethnicity, age, disability, religion, nationality. Detection via post-processing classifier, LLM-as-judge, or demographic-variant input comparison. Risk-tiered minimums.
+- **Output relevance check** (new guardrail 4e) — Verify AI responses stay on-topic. Embedding similarity, LLM-as-judge, or topic classifier methods.
+- **Generated code security** (new guardrail 4g) — Scan AI-generated code for SQL injection, XSS, command injection, path traversal, hardcoded credentials. Static analysis or security-focused LLM review.
+- **guardrails-designer** updated with test sections for all new guardrail types and expanded coverage map template.
+
+### Evaluation Enrichments
+
+- **Human annotation workflow** — eval-designer now includes Step 3b for determining AI vs human scoring method per rubric criterion. Guidance on annotation guidelines, inter-annotator agreement (80% minimum), calibration sets, and mixed AI+human scoring on the same eval run.
+- **eval-suite** rubric criteria now tagged as AI-scorable or human-required, with annotation guideline examples for human-required criteria.
+
+### Observability Enrichments
+
+- **Tracing & instrumentation** — ai-ops now includes Step 1b for design-time tracing decisions. Per-call trace field requirements (trace ID, span hierarchy, model version, prompt hash, token counts, retrieval metadata, guardrail triggers). Instrumentation approach guidance (decorator/middleware/SDK/manual). Content logging policy coordinated with guardrails-designer.
+
+### AI Inversion Updates
+
+- RAG failure modes 1-3 now include concrete mitigation references (contextual retrieval, self-query, hybrid retrieval, query rewriting, HyDE).
+- Cross-cutting mitigations note: if multiple RAG failure modes score MEDIUM+, evaluate contextual retrieval (ingestion-time) and self-query (query-time).
+
+### Template Sync
+
+- All changes mirrored across `agents/`, `templates/claude/agents/`, and `templates/github/agents/`.
+- VS Code Copilot abbreviated templates updated for rag-advisor, guardrails-designer, eval-designer, and ai-ops.
+- Homebrew CLI version bumped to 0.12.0.
+
+### Files Changed
+
+- 18 files touched (17 modified + 1 new skill)
+- +460 lines added across agents, skills, and templates
+
+---
+
 ## [0.11.0] — 2026-04-01
 
 ### Overview

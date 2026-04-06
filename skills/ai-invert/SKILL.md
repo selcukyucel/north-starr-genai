@@ -84,13 +84,14 @@ Systematically work through each dimension:
 - At each step of the pipeline (ingestion → parsing → embedding → retrieval → generation → post-processing), what could go wrong?
 - What validation exists between steps — and what's missing?
 - **RAG failure taxonomy (if the pipeline includes retrieval):** Systematically check for these six failure modes:
-  1. **Retrieval failure** — relevant documents exist but aren't retrieved (test: known-answer queries where the document is in the index)
-  2. **Chunk boundary** — answer spans chunk boundaries and neither chunk is complete (test: questions about information near section breaks)
-  3. **Semantic gap** — user phrasing doesn't match document phrasing (test: paraphrased queries using synonyms or different jargon)
+  1. **Retrieval failure** — relevant documents exist but aren't retrieved (test: known-answer queries where the document is in the index). Mitigations: contextual retrieval (pre-embedding context enrichment reduces retrieval failure by ~35%), hybrid retrieval, query rewriting.
+  2. **Chunk boundary** — answer spans chunk boundaries and neither chunk is complete (test: questions about information near section breaks). Mitigations: contextual retrieval (context paragraph preserves document structure lost during chunking), parent-child chunking, increased overlap.
+  3. **Semantic gap** — user phrasing doesn't match document phrasing (test: paraphrased queries using synonyms or different jargon). Mitigations: self-query (extracts structured filters so semantic mismatch in filter attributes doesn't hurt recall), hybrid retrieval with BM25, query rewriting, HyDE.
   4. **Multi-hop** — answer requires combining facts from 2+ documents (test: comparison or synthesis questions)
   5. **Temporal staleness** — index contains outdated information (test: questions about recently updated facts)
   6. **Context ignored** — LLM uses parametric knowledge instead of retrieved context (test: questions where retrieved context contradicts common knowledge)
   For each mode, generate 1-2 specific test inputs tailored to THIS pipeline's corpus and query patterns.
+  **Cross-cutting mitigations:** If multiple failure modes score MEDIUM or HIGH, evaluate contextual retrieval (ingestion-time — mitigates modes 1, 2, 3) and self-query (query-time — mitigates modes 1, 3, 5). Both are described in the `rag-advisor` agent design.
 
 #### E. Cost & Resource
 - **Token cost at scale**: Estimate cost per request (input tokens + output tokens) × volume at 1x, 10x, 100x

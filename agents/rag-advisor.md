@@ -43,7 +43,55 @@ Characterize the knowledge base:
 - **Language:** Monolingual or multilingual
 - **Sensitivity:** Public, internal, PII-containing, regulated
 
-### 3. Design Chunking Strategy
+### 3. Design Data Ingestion Pipeline
+
+Before chunking, design how documents enter and are maintained in the system:
+
+#### Ingestion Pipeline Stages
+1. **Source connectors** — how documents are fetched (API polling, webhook, file watch, manual upload)
+2. **Parsing** — extract text from source format (PDF→text, HTML→text, DOCX→text). Identify parser for each document type. Note: parsing quality is the #1 silent failure in RAG — bad parsing produces bad chunks regardless of strategy.
+3. **Cleaning** — normalize whitespace, strip boilerplate (headers/footers/nav), resolve encoding issues, handle OCR artifacts
+4. **De-duplication** — detect and handle duplicate or near-duplicate documents (exact hash, MinHash for near-dupes). Define policy: skip, replace, or version.
+5. **Quality validation** — reject documents below quality threshold: minimum text length, language detection, encoding validation, structural integrity checks
+6. **Metadata extraction** — extract and attach: source URL/path, author, creation/modification date, document type, access permissions, section hierarchy
+
+#### Staleness & Refresh Strategy
+- **Refresh trigger:** How to detect source documents have changed (polling interval, webhook, content hash comparison)
+- **Incremental updates:** Re-embed only changed/new documents, not the full corpus. Track document hashes to detect changes.
+- **Re-indexing plan:** When full re-indexing is needed (embedding model change, chunking strategy change, schema migration)
+- **Staleness detection:** Monitor age of newest document in index vs source. Alert if index falls behind by more than the defined freshness SLA.
+- **Backfill plan:** How to handle bulk ingestion of historical documents without impacting live retrieval performance
+
+#### Access Control & Permissions
+If the corpus contains documents with different access levels:
+- **Permission model:** Define how document permissions map to retrieval filters (user→role→document-set, tenant isolation, row-level security)
+- **Metadata filters:** Attach permission metadata to chunks at ingestion time so retrieval can enforce access control via metadata filtering
+- **Audit:** Log which user retrieved which documents for compliance
+
+#### Data Quality Monitoring
+- **Ingestion metrics:** Documents processed/failed per run, parsing success rate, average document quality score
+- **Index health:** Total documents, total chunks, average chunk size, embedding dimension consistency
+- **Freshness metric:** Time since last successful ingestion run, oldest document in index
+
+### 3b. Multimodal Input Handling (if the pipeline processes images, PDFs with visuals, or documents with tables)
+
+If the corpus includes non-text content, design preprocessing before chunking:
+
+**Document Preprocessing:**
+- **PDFs with text:** Use text extraction (pdfplumber, PyMuPDF) as primary. Fall back to OCR only when text layer is missing or corrupted.
+- **PDFs with images/charts:** Extract images separately. Decide per-image: use vision model for description, or skip. Budget: vision API calls are 5-10x more expensive than text calls.
+- **Tables:** Extract tables as structured data (CSV/JSON), not as flattened text. Chunk tables separately from prose. Preserve column headers in each table chunk.
+- **Scanned documents:** OCR pipeline (Tesseract, cloud OCR APIs). Quality varies by scan quality — add OCR confidence score to metadata and flag low-confidence chunks.
+- **Images (standalone):** Generate text descriptions via vision model at ingestion time. Store description as the searchable chunk, link to original image.
+
+**Quality checks for multimodal:**
+- OCR confidence threshold: reject or flag chunks with confidence < 0.80
+- Image resolution minimum: skip images too small to contain useful information
+- Table structure validation: verify extracted table has consistent column counts
+
+**Error attribution:** When multimodal RAG fails, the bug is usually in preprocessing (bad OCR, lost table structure), not in the LLM. Log preprocessing quality metrics to enable diagnosis.
+
+### 4. Design Chunking Strategy
 
 Select and configure the chunking approach:
 
@@ -81,7 +129,36 @@ For each strategy, specify:
 > - Metadata to attach: source document, section title, page number, ingestion date
 > - Pre-processing: strip boilerplate headers/footers, normalize whitespace, extract tables as separate chunks
 
-### 4. Select Embedding Model
+#### Contextual Retrieval (Pre-Embedding Context Enrichment)
+
+Chunking strips document-level context — a chunk about "the policy" loses which policy, from which document, in which section. Contextual retrieval fixes this at ingestion time: before embedding each chunk, use an LLM to generate a short context paragraph situating the chunk within its source document, then prepend that context to the chunk text before embedding.
+
+**How it works:**
+1. For each chunk, send the full (or summarized) source document + the chunk to an LLM
+2. Prompt: "Given this document, write a short context (2-3 sentences) explaining where this chunk fits — what document it's from, what section, and what topic it addresses."
+3. Prepend the generated context to the chunk text: `{context}\n\n{chunk}`
+4. Embed the contextualized chunk (not the raw chunk)
+
+**When to use:**
+
+| Signal | Use contextual retrieval? |
+|--------|--------------------------|
+| Chunks frequently lack enough context to be useful alone | Yes — this is the primary use case |
+| Documents are long with many similarly-worded sections | Yes — context disambiguates which section a chunk belongs to |
+| Parent-child chunking already provides sufficient context | Maybe not — test both, parent-child may be enough |
+| Corpus is small (<50 docs) and chunks are large (>512 tokens) | Probably not — chunks already carry enough context |
+| Ingestion cost budget is very tight | No — adds one LLM call per chunk at ingestion time |
+
+**Cost:** One LLM call per chunk at ingestion time (not at query time). For a 10,000-chunk corpus using a cheap model (e.g., Claude Haiku, GPT-4o-mini): ~$1-5 total. This is a one-time ingestion cost, not per-query.
+
+> **Starting defaults (tune on your eval set):**
+> - Context model: use the cheapest capable model (Claude Haiku or GPT-4o-mini) — context generation doesn't need frontier intelligence
+> - Context length: 2-3 sentences (~50-75 tokens). Longer context dilutes the chunk's semantic signal in the embedding
+> - Cache the source document summary if the full document exceeds the context model's window
+> - Combine with BM25 (hybrid retrieval) for best results — Anthropic reports up to 49% retrieval failure reduction when combining contextual retrieval with BM25
+> - Reference: [Anthropic, "Introducing Contextual Retrieval" (2024)](https://www.anthropic.com/news/contextual-retrieval)
+
+### 5. Select Embedding Model
 
 Choose the embedding model based on requirements:
 - **Accuracy vs cost:** Higher-dimension models are more accurate but cost more per embedding
@@ -98,7 +175,7 @@ Document the selection with rationale and fallback option.
 > - Cost-sensitive: `text-embedding-3-small` (1536d) — ~5x cheaper, ~3-5% accuracy drop on typical benchmarks
 > - Benchmark scores don't predict domain fit — always test your actual queries against your actual corpus
 
-### 5. Design Retrieval Approach
+### 6. Design Retrieval Approach
 
 #### Retrieval Strategy
 - **Dense retrieval** — vector similarity search. Good default for semantic matching
@@ -121,7 +198,45 @@ Document the selection with rationale and fallback option.
 - **Diversity filter:** Avoid returning near-duplicate chunks from the same source
 - **Metadata filters:** Pre-filter by date, source, category before similarity search
 
-### 6. Configure Re-Ranking
+#### Self-Query (LLM-Powered Metadata Filter Extraction)
+
+Static metadata filters require the application to hardcode which filters to apply. Self-query makes filters dynamic: an LLM decomposes the user's natural language query into (1) a cleaned semantic query for vector search and (2) structured metadata filters extracted from the query itself.
+
+**How it works:**
+1. User query arrives: "Find the onboarding policy updated after January 2025"
+2. An LLM extracts structured filters from the query using a schema you define
+3. Output: `semantic_query = "onboarding policy"`, `filters = {doc_type: "policy", updated_after: "2025-01-01"}`
+4. Execute vector search on `semantic_query` with `filters` applied as metadata pre-filters
+
+**Structured output schema (Pydantic example):**
+```python
+class SelfQueryResult(BaseModel):
+    """LLM-extracted query decomposition for self-query retrieval."""
+    semantic_query: str  # Cleaned query for vector similarity search
+    filters: dict[str, str | list[str] | None] = {}  # Metadata filters extracted from query
+    filter_logic: Literal["AND", "OR"] = "AND"  # How to combine multiple filters
+    confidence: Literal["high", "medium", "low"] = "high"  # LLM confidence in filter extraction
+```
+
+**When to use:**
+
+| Signal | Use self-query? |
+|--------|----------------|
+| Users frequently include filterable attributes in natural language queries | Yes — primary use case |
+| Rich metadata exists on chunks (dates, categories, sources, doc types) | Yes — filters need metadata to filter on |
+| Queries are purely semantic with no filterable attributes | No — adds latency with no benefit |
+| Metadata schema is unstable or inconsistent across documents | Not yet — stabilize metadata first |
+
+**Cost:** One LLM call per query (structured output, typically <100 tokens). With a fast model (Claude Haiku, GPT-4o-mini), adds ~100-200ms and <$0.001 per query.
+
+> **Starting defaults (tune on your eval set):**
+> - Extraction model: cheapest model with reliable structured output (Claude Haiku or GPT-4o-mini with JSON mode)
+> - Define the filter schema from your chunk metadata fields — only expose fields that actually exist in your index
+> - Fall back to unfiltered vector search when confidence is "low" — a wrong filter is worse than no filter
+> - Log extracted filters for debugging — when retrieval fails, check if the LLM extracted incorrect filters
+> - Combine with query rewriting: rewrite first, then self-query on the rewritten query
+
+### 7. Configure Re-Ranking
 
 If retrieval accuracy is critical, add a re-ranking stage:
 - **Cross-encoder re-ranker** — scores query-chunk pairs for relevance. More accurate than embedding similarity, but slower
@@ -135,7 +250,7 @@ Specify:
 
 > **Recommended starting pipeline:** Retrieve top-20 candidates → re-rank with cross-encoder (e.g., `cross-encoder/ms-marco-MiniLM-L-6-v2`) → return top-5. Budget 50-100ms for the re-ranking step. For hybrid retrieval, apply Reciprocal Rank Fusion before the cross-encoder stage.
 
-### 6b. Select Vector Database (if applicable)
+### 7b. Select Vector Database (if applicable)
 
 If the project requires a vector database, select based on operational context:
 
@@ -150,7 +265,7 @@ If the project requires a vector database, select based on operational context:
 
 Document the selection in the RAG design file with rationale and migration path if you outgrow it.
 
-### 7. Design Context Window Management
+### 8. Design Context Window Management
 
 The retrieved chunks must fit within the prompt's token budget:
 
@@ -173,7 +288,7 @@ Define how retrieved context appears in the prompt:
 - Metadata displayed with each chunk (source, page, date)
 - Instructions to the model about how to use the context (cite sources, prefer recent, note conflicts)
 
-### 8. Write the RAG Design
+### 9. Write the RAG Design
 
 Write to `.plans/RAG-<name>.md`:
 
@@ -190,12 +305,32 @@ Write to `.plans/RAG-<name>.md`:
 - Update frequency: <frequency>
 - Sensitivity: <classification>
 
+## Data Ingestion Pipeline
+- Source connectors: <how documents enter the system>
+- Parsing: <document type → parser mapping>
+- Cleaning: <normalization steps>
+- De-duplication: <strategy and policy>
+- Quality validation: <minimum thresholds>
+- Metadata extraction: <fields extracted>
+
+## Staleness & Refresh
+- Refresh trigger: <polling interval / webhook / hash comparison>
+- Incremental updates: <yes/no, mechanism>
+- Freshness SLA: <max acceptable index lag>
+- Re-indexing trigger: <when full re-index is needed>
+
+## Access Control (if multi-tenant or mixed permissions)
+- Permission model: <user→role→document mapping>
+- Enforcement: <metadata filtering at retrieval time>
+- Audit: <retrieval logging for compliance>
+
 ## Chunking Strategy
 - Strategy: <fixed-size/semantic/recursive/document-aware/sliding-window>
 - Chunk size: <N> tokens
 - Overlap: <N> tokens (<percentage>%)
 - Metadata: <fields>
 - Pre-processing: <steps>
+- Contextual retrieval: <enabled/disabled — if enabled: context model, context length, cost estimate>
 
 ## Embedding Model
 - Model: <name>
@@ -209,6 +344,7 @@ Write to `.plans/RAG-<name>.md`:
 - Similarity threshold: <N>
 - Diversity filter: <yes/no, config>
 - Metadata filters: <if applicable>
+- Self-query: <enabled/disabled — if enabled: extraction model, filter schema fields, fallback behavior>
 
 ## Re-Ranking
 - Enabled: <yes/no>
@@ -306,7 +442,7 @@ Then derive project-specific risks from the corpus profile. Check each signal:
 List at least 2 project-specific risks with concrete mitigations. Do NOT just repeat the generic 6 — derive from the actual corpus.
 ```
 
-### 9. Return Summary
+### 10. Return Summary
 
 After writing the design, return a concise summary:
 

@@ -48,6 +48,7 @@ Define binary YES/NO criteria that every test case is scored against. The rubric
    - "Output is valid JSON" and "All required fields present" — if invalid JSON always means missing fields, these overlap. Fix: keep the JSON criterion, make the fields criterion check for semantic completeness instead.
    - "Factually accurate" and "Grounded in context" — if all facts come from context, these overlap. Fix: keep grounding, make accuracy focus on reasoning/inference correctness.
 5. 5-10 criteria is the sweet spot
+6. **Tag each criterion as AI-scorable or human-required** -- objective criteria (format, field presence, factual accuracy against known answers) can be scored by AI-as-judge. Subjective criteria (tone, helpfulness, brand voice, "makes sense") require human annotation. For human-required criteria, include annotation guidelines: 2 examples of YES, 2 examples of NO, and the decision boundary. The `eval-designer` agent determines the full scoring method (AI, human, or mixed) at evaluation time.
 
 **Standard criteria to consider (include those that apply):**
 
@@ -79,6 +80,9 @@ Define binary YES/NO criteria that every test case is scored against. The rubric
   - Query requiring information from 2+ chunks (multi-hop)
   - Query about recently added documents (freshness)
   - Query where no relevant document exists (should trigger "I don't know" response)
+  - Query where chunk text alone is ambiguous but contextual retrieval should disambiguate (tests pre-embedding context enrichment — compare retrieval with/without contextualized chunks)
+  - Query containing natural language filter attributes (e.g., "policies updated in 2025") where self-query should extract metadata filters (tests filter extraction accuracy — verify correct filters are applied and irrelevant documents are excluded)
+  - Query with filter attributes that don't match any metadata values (tests self-query fallback — should degrade to unfiltered vector search, not return empty results)
 
 **JSONL format per example:**
 ```json
@@ -97,7 +101,7 @@ Define binary YES/NO criteria that every test case is scored against. The rubric
 - **Conflicting instructions** — contradict specific instructions in THIS prompt's system message. If the prompt says "classify into 4 categories," ask for a 5th. If it says "respond in JSON," request markdown.
 - **Semantic attacks** — create inputs that exploit THIS prompt's domain. For a classification prompt: tickets that could plausibly be two categories. For a summarization prompt: documents with contradictory facts. Include plausible but fictional entities the model might hallucinate about.
 - **Format exploitation** — use the actual input format and break it. If input is free text: excessive whitespace, code blocks, HTML tags. If input is JSON: malformed JSON, extra fields, nested injection.
-- **Retrieval poisoning** (if pipeline includes RAG) — queries designed to exploit the retrieval layer: queries crafted to retrieve irrelevant but high-similarity chunks, queries that exploit metadata filter logic, queries that trigger multi-hop failure by requiring synthesis the pipeline can't perform
+- **Retrieval poisoning** (if pipeline includes RAG) — queries designed to exploit the retrieval layer: queries crafted to retrieve irrelevant but high-similarity chunks, queries that exploit metadata filter logic, queries that trigger multi-hop failure by requiring synthesis the pipeline can't perform. If the pipeline uses self-query, also test: queries with contradictory filter attributes ("documents from 2025 and 2020"), queries that inject filter values not in the schema, and queries that embed plausible-looking but incorrect metadata to manipulate filter extraction.
 
 **Each adversarial input must include:** the attack string, which specific vulnerability it targets in this prompt, and what bad output looks like if the attack succeeds.
 

@@ -1,6 +1,6 @@
 # North Starr GenAI
 
-**Your North Starr for AI Development** | v0.11.0
+**Your North Starr for AI Development** | v0.12.0
 
 An agentic AI development agency framework — North Starr plans, designs, validates, and orchestrates while Claude Code writes code in YOUR codebase. Works with any project: RAG pipelines, agent harnesses, multi-agent systems, prompt chains, or AI platform components.
 
@@ -124,7 +124,7 @@ Based on answers, it routes through: **ASSESS** → **BUILD** (specialists auto-
 /plugin install north-starr-genai
 ```
 
-This immediately makes all 23 skills (e.g. `/assess`, `/decompose`, `/orchestrate`) and 15 agents available in your Claude Code session. No files are added to your project — the plugin lives in `~/.claude/plugins/`.
+This immediately makes all 24 skills (e.g. `/assess`, `/decompose`, `/orchestrate`) and 15 agents available in your Claude Code session. No files are added to your project — the plugin lives in `~/.claude/plugins/`.
 
 Then run `/bootstrap` in your project to generate a `CLAUDE.md` with your codebase's tech stack, architecture, and module map. This lets North Starr tailor its output to your specific project.
 
@@ -207,7 +207,7 @@ rm AGENTS.md
    | Stories ready | `/orchestrate` | Full pipeline: TRIAGE → DELIVER |
    | A single task | Just describe it | Complexity gate routes automatically |
 
-## Skills (23)
+## Skills (24)
 
 ### Discovery & Planning
 
@@ -232,9 +232,10 @@ rm AGENTS.md
 
 | Skill | Purpose |
 |-------|---------|
-| `/eval-suite` | Generate evaluation datasets — golden examples with exact expected outputs, adversarial inputs, regression anchors |
+| `/eval-suite` | Generate evaluation datasets — golden examples with exact expected outputs, adversarial inputs, regression anchors, AI-scorable vs human-required criterion tagging |
+| `/ai-test` | **NEW** Generate executable pytest files for deterministic AI outputs — assertion-based tests for classification, extraction, routing; CI/CD ready; complements `/eval-suite` for structured outputs |
 | `/prompt-test` | Single-run prompt evaluation — non-deterministic handling, pattern-specific fix suggestions |
-| `/guardrail-spec` | Generate guardrail specs — pipeline-stage scoped, false positive estimation, testable criteria |
+| `/guardrail-spec` | Generate guardrail specs — pipeline-stage scoped, PII/secrets detection, bias detection, relevance checking, code security scanning, false positive estimation, testable criteria |
 
 ### Operations & Delivery
 
@@ -277,17 +278,17 @@ rm AGENTS.md
 | Agent | Purpose |
 |-------|---------|
 | `prompt-engineer` | Prompt design — pattern rationale with rejected alternatives, token budget derivation, domain-realistic eval handoff |
-| `rag-advisor` | RAG pipeline design — corpus-to-chunking decision table, multi-hop iterative retrieval, Context Injection Contract, cost derivation formulas, project-specific risk derivation |
+| `rag-advisor` | RAG pipeline design — data ingestion pipeline, multimodal handling, contextual retrieval (pre-embedding enrichment), corpus-to-chunking decision table, self-query (LLM metadata filter extraction), multi-hop iterative retrieval, Context Injection Contract, cost derivation formulas, project-specific risk derivation |
 | `integration-planner` | External system integration — API contracts, circuit breakers, credential escalation |
 | `agentic-designer` | **NEW** AI-powered UI/UX — confidence thresholds by interface type, typed data contracts, actionable error recovery, AI-specific edge case derivation |
 
 ### Validation
 | Agent | Purpose |
 |-------|---------|
-| `eval-designer` | Eval suite execution — golden examples with exact expected outputs, statistical significance rules, actual model outputs in feedback |
-| `guardrails-designer` | Safety validation — project-specific synthetic PII, blast radius with downstream system names, prompt-adversary delegation, retrieval security |
+| `eval-designer` | Eval suite execution — golden examples with exact expected outputs, statistical significance rules, AI vs human annotation scoring method selection, inter-annotator agreement, actual model outputs in feedback |
+| `guardrails-designer` | Safety validation — project-specific synthetic PII/secrets, bias detection, relevance checking, code security scanning, blast radius with downstream system names, prompt-adversary delegation, retrieval security |
 | `prompt-adversary` | Red-teaming — targeted weakness per attack, multi-step chained attacks, implementation-specific recommendations |
-| `ai-ops` | Monitoring, alerting, drift detection — RAG-specific metrics, cost projection, runbook references |
+| `ai-ops` | Monitoring, alerting, drift detection — tracing & instrumentation design, RAG-specific metrics, cost projection, runbook references |
 
 ### Delivery
 | Agent | Purpose |
@@ -295,75 +296,6 @@ rm AGENTS.md
 | `demo-builder` | Client delivery packaging, UAT instructions, acceptance gate |
 
 ## Architecture
-
-### Agent Interaction Map
-
-```
-                    ┌──────────┐
-                    │ /assess  │ ← classifies project type
-                    └────┬─────┘
-                         │
-                    ┌────┴─────┐
-                    │/discover │ ← elicits requirements (if needed)
-                    └────┬─────┘
-                         │
-                    ┌────┴──────┐
-                    │/decompose │ ← PRD → stories
-                    └────┬──────┘
-                         │
-                  ┌──────┴──────┐
-                  │ ORCHESTRATOR │
-                  └──────┬──────┘
-                         │
-              ┌──────────┴──────────┐
-              │    chief-ai-po      │ TRIAGE
-              └──────────┬──────────┘
-                         │
-              ┌──────────┴──────────┐
-              │    ai-architect     │ DESIGN
-              └────┬──────────┬─────┘
-                   │          │
-         ┌─────────┘          └──────────┐
-         ▼                               ▼
-   ┌──────────┐                 ┌───────────────┐
-   │ ai-invert│                 │cost-estimator │
-   └────┬─────┘                 └───────┬───────┘
-        └───────────────┬───────────────┘
-                        ▼
-                 ┌─────────────┐
-                 │  layoutplan │ PLAN (tags tasks with specialists)
-                 └──────┬──────┘
-                        │
-       ┌────────────────┼────────────────┬──────────────┐
-       ▼                ▼                ▼              ▼
-┌────────────┐  ┌────────────┐  ┌───────────────┐ ┌──────────┐
-│  prompt-   │  │   rag-     │  │ integration-  │ │ agentic- │
-│  engineer  │  │  advisor   │  │   planner     │ │ designer │
-└─────┬──────┘  └─────┬──────┘  └───────┬───────┘ └────┬─────┘
-      └───────────────┼─────────────────┼───────────────┘
-                      ▼ BUILD
-        ┌─────────────┼──────────────┐
-        ▼             ▼              ▼
-┌────────────┐ ┌────────────┐ ┌───────────┐
-│   eval-    │ │ guardrails-│ │  ai-ops   │
-│  designer  │ │  designer  │ │ (monitor) │
-└─────┬──────┘ └──────┬─────┘ └─────┬─────┘
-      │          ┌────┴─────┐       │
-      │          │  prompt- │       │
-      │          │adversary │       │
-      │          └──────────┘       │
-      └───────────────┼────────────┘
-                      ▼ HARDEN
-               ┌────────────┐
-               │demo-builder│ DELIVER
-               └────────────┘
-
-Feedback loops:
-  eval fails ──→ prompt-engineer (fix prompt)
-  guardrails fail ──→ ai-architect (fix design)
-  cost overrun ──→ ai-architect (cheaper model)
-  same gate fails twice ──→ HUMAN escalation
-```
 
 ### Project Type Adaptation
 

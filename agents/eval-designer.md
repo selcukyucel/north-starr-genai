@@ -110,6 +110,29 @@ Execute the prompt/pipeline with each test input:
 - If the pipeline includes retrieval: record retrieval latency separately from generation latency
 - Handle errors gracefully (timeout, rate limit, content filter)
 
+### 3b. Determine Scoring Method (AI vs Human)
+
+Not all criteria can be reliably scored by an AI judge. Before running evaluation, classify each rubric criterion:
+
+| Criterion Type | Score With | Examples |
+|---|---|---|
+| **Objective / verifiable** | AI-as-judge | Format compliance, required fields present, factual accuracy against known answers, citation existence |
+| **Subjective / nuanced** | Human annotation | Tone appropriateness, helpfulness, brand voice consistency, whether an explanation "makes sense," persuasiveness |
+| **High-stakes** | Human annotation (required) | Any criterion where a false positive (scoring YES when answer is NO) could cause real harm — legal advice quality, medical accuracy, financial recommendation suitability |
+
+**When to require human annotation:**
+- At least one criterion is subjective and the output is client-facing
+- The eval suite is being used to establish an initial baseline (human scores calibrate future AI scoring)
+- AI-as-judge scores on a criterion show high variance across runs (>15% disagreement) — the criterion may be too subjective for AI scoring
+
+**Human annotation design (when required):**
+- **Annotation guidelines:** Write a 1-page guide for annotators explaining each criterion with 2 examples of YES and 2 examples of NO. Ambiguity in guidelines is the #1 source of annotation noise.
+- **Inter-annotator agreement:** Have at least 2 annotators score the same 20 outputs independently. If agreement is below 80% on any criterion, the criterion is too vague — rewrite it before proceeding.
+- **Calibration set:** Before full annotation, have all annotators score 5 shared examples and discuss disagreements. This aligns interpretation.
+- **Mix AI + human:** Use AI-as-judge for objective criteria and human annotators for subjective criteria on the same eval run. Report which scoring method was used per criterion.
+
+If all criteria are objective and verifiable, AI-as-judge is sufficient — skip human annotation.
+
 ### 4. Score Results
 
 For each output, apply the scoring rubric:

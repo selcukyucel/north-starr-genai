@@ -78,7 +78,7 @@ For **each input channel** identified in Step 1, specify the following. Skip cat
 
 | Setting | Specification |
 |---------|--------------|
-| PII types to scan | List specific types: names, emails, phone numbers, SSNs, credit cards, addresses, dates of birth, medical record numbers, etc. |
+| PII types to scan | List specific types: names, emails, phone numbers, SSNs, credit cards, addresses, dates of birth, medical record numbers, etc. Also check for **secrets**: API keys, access tokens, passwords, connection strings, private keys, AWS credentials — these are distinct from PII but equally sensitive. |
 | Detection method | Regex patterns, NER model, third-party API (e.g., Presidio, AWS Comprehend), or combination |
 | Action on detection | **Redact** (replace with placeholder, pass to model), **Reject** (block request, return error), or **Flag** (allow but log for review) |
 | Redaction format | e.g., `[REDACTED-EMAIL]`, `[REDACTED-SSN]`, `***-**-1234` (last 4 visible) |
@@ -173,7 +173,43 @@ For **each output channel** identified in Step 1, specify the following.
 | Missing source behavior | What to do if the model asserts a fact without a retrievable source |
 | Attribution display | How source attribution is presented to the user |
 
-#### 4e. Hallucination Checks
+#### 4e. Relevance Check
+
+| Setting | Specification |
+|---------|--------------|
+| Relevance method | Embedding similarity between query and response, LLM-as-judge relevance score, or topic classifier |
+| Threshold | Minimum relevance score to serve (e.g., > 0.6 cosine similarity between query and response embeddings) |
+| Off-topic behavior | **Flag** (serve but log for review), **Redirect** (ask user to rephrase), or **Block** (suppress and show fallback) |
+
+Skip if the automation has no free-form user queries (e.g., fixed-input classification pipelines).
+
+#### 4f. Bias Detection
+
+| Setting | Specification |
+|---------|--------------|
+| Bias categories | Demographic groups to check: gender, race/ethnicity, age, disability, religion, nationality, socioeconomic status |
+| Detection method | Post-processing classifier (e.g., Regard, HolisticBias), LLM-as-judge with bias rubric, or statistical comparison across demographic variants of the same query |
+| Scope | Which output fields or sections to scan (e.g., recommendations, descriptions, rankings — not raw data lookups) |
+| Action on detection | **Block** (suppress output, show fallback), **Rewrite** (neutralize and serve), or **Flag** (serve but log and queue for review) |
+| Testing approach | Generate demographic-variant input pairs (same query with different names/pronouns/contexts) and compare output consistency |
+
+**Minimum by risk tier:**
+- LOW: No active scanning — address bias reactively if reported
+- MEDIUM: Flag outputs that score above bias threshold, review monthly sample
+- HIGH: Active scanning on all outputs, block biased content, human review queue
+
+#### 4g. Generated Code Security (if the automation produces code)
+
+| Setting | Specification |
+|---------|--------------|
+| Vulnerability scan | Check generated code for: SQL injection, XSS, command injection, path traversal, hardcoded credentials, insecure deserialization |
+| Detection method | Static analysis rules (regex patterns for known dangerous patterns), AST-based linting, or security-focused LLM review |
+| Language coverage | Which languages the scanner supports (must match what the model generates) |
+| Action on detection | **Block** (suppress code, explain the vulnerability), **Annotate** (serve with inline security warnings), or **Fix** (auto-remediate and serve corrected version) |
+
+Skip if the automation never generates executable code.
+
+#### 4h. Hallucination Checks
 
 | Setting | Specification |
 |---------|--------------|
@@ -342,11 +378,11 @@ Each guardrail includes a testable acceptance criterion so `guardrails-designer`
 
 | Pipeline Stage | Guardrails | Status |
 |---------------|-----------|--------|
-| Ingestion | <list: input validation, PII detection> | Covered / Gaps |
+| Ingestion | <list: input validation, PII/secrets detection> | Covered / Gaps |
 | Pre-processing | <list> | Covered / Gaps |
 | Before model call | <list: injection defense, final PII check> | Covered / Gaps |
-| Model output | <list: format validation, hallucination check> | Covered / Gaps |
-| Post-processing | <list: content filtering, confidence thresholds> | Covered / Gaps |
+| Model output | <list: format validation, hallucination check, relevance check> | Covered / Gaps |
+| Post-processing | <list: content filtering, bias detection, confidence thresholds, code security> | Covered / Gaps |
 | Before delivery | <list: human escalation triggers> | Covered / Gaps |
 | Cross-cutting | <list: audit logging, rate limiting, monitoring> | Covered / Gaps |
 
@@ -370,9 +406,12 @@ After writing to disk, present a concise summary:
 | Layer | Count | Status |
 |-------|-------|--------|
 | Input validation | <N> | <Covered / Gaps exist> |
-| PII protection | <N> | <Covered / Gaps exist> |
+| PII/secrets protection | <N> | <Covered / Gaps exist> |
 | Injection defense | <N> | <Covered / Gaps exist> |
 | Content safety | <N> | <Covered / Gaps exist> |
+| Relevance/quality | <N> | <Covered / Gaps exist> |
+| Bias detection | <N> | <Covered / Gaps exist> |
+| Code security | <N> | <Covered / Gaps exist> |
 | Confidence/quality | <N> | <Covered / Gaps exist> |
 | Human escalation | <N> | <Covered / Gaps exist> |
 | Audit logging | <N> | <Covered / Gaps exist> |
