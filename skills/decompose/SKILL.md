@@ -8,9 +8,9 @@ argument-hint: <PRD text, file path, or PDF path>
 
 ## Purpose
 
-Break down a Product Requirements Document into structured, prioritized user stories with dependency mapping. Produces a persistent story map that feeds individual stories into the existing `/invert` → `layoutplan` pipeline.
+Break down a Product Requirements Document into structured, prioritized user stories with dependency mapping. Produces a persistent story map that feeds individual stories into the existing `/genai-invert` → `genai-layoutplan` pipeline.
 
-Use this when you receive a PRD, spec, or feature brief that is too large for a single `/invert` analysis — typically anything with multiple workflows, feature areas, or delivery phases.
+Use this when you receive a PRD, spec, or feature brief that is too large for a single `/genai-invert` analysis — typically anything with multiple workflows, feature areas, or delivery phases.
 
 ## Input
 
@@ -87,11 +87,11 @@ No stories will be created for these items.
 
 Options:
   1. chief-ai-po only — AI-augmented stories (recommended for AI-native projects)
-  2. storymap only — standard stories (no AI-specific analysis)
-  3. Both — storymap first, then chief-ai-po augments with AI layer
+  2. genai-storymap only — standard stories (no AI-specific analysis)
+  3. Both — genai-storymap first, then chief-ai-po augments with AI layer
 
 [If AI Project = No:]
-The storymap agent will run on a separate thread to decompose this PRD.
+The genai-storymap agent will run on a separate thread to decompose this PRD.
 
 Proceed?
 ```
@@ -122,7 +122,7 @@ Wait for user approval before continuing.
 <full PRD content>
 ```
 
-This serves as the input file for the `storymap` agent and as a permanent record.
+This serves as the input file for the `genai-storymap` agent and as a permanent record.
 
 ### Step 5: Spawn the Decomposition Agent
 
@@ -142,15 +142,15 @@ Spawn the `chief-ai-po` agent on a separate thread:
 
 The agent will produce stories with inverted failure modes, 6 mandatory AI safety stories (SA.1-SA.6), human oversight checkpoints, and graceful degradation criteria on every AI-touching story.
 
-**Option 2 — storymap only (non-AI projects, or user choice):**
-Spawn the `storymap` agent on a separate thread:
+**Option 2 — genai-storymap only (non-AI projects, or user choice):**
+Spawn the `genai-storymap` agent on a separate thread:
 
 > "Decompose `.plans/PRD-<name>.md` into epics and user stories. Write output to `.plans/STORIES-<name>.md`. [Append context above.]"
 
 The agent will identify epics, decompose into user stories with acceptance criteria, map dependencies, assign priorities, estimate sizes, and flag invert candidates.
 
-**Option 3 — Both (storymap then chief-ai-po):**
-Spawn `storymap` first. After it completes and writes `.plans/STORIES-<name>.md`, spawn `chief-ai-po`:
+**Option 3 — Both (genai-storymap then chief-ai-po):**
+Spawn `genai-storymap` first. After it completes and writes `.plans/STORIES-<name>.md`, spawn `chief-ai-po`:
 
 > "Augment `.plans/PRD-<name>.md` with AI-specific analysis. The base story map is at `.plans/STORIES-<name>.md`. Write output to `.plans/STORIES-AI-<name>.md`."
 
@@ -158,7 +158,7 @@ The chief-ai-po agent will read both files and produce an AI-augmented version t
 
 ### Step 6: Present Results & Offer GitHub Issues
 
-**IMPORTANT:** This step runs on the main thread after the storymap agent returns. You MUST complete this step — do not end the conversation after the agent summary.
+**IMPORTANT:** This step runs on the main thread after the genai-storymap agent returns. You MUST complete this step — do not end the conversation after the agent summary.
 
 Once the agent completes:
 
@@ -372,7 +372,7 @@ Review and run:
 ## Notes
 
 - This skill is domain-agnostic — it works for any PRD regardless of industry or technology
-- The `storymap` agent runs on a separate thread to keep main context clean for large PRDs
+- The `genai-storymap` agent runs on a separate thread to keep main context clean for large PRDs
 - Stories are sized by **AI context budget (~300K tokens per story)**, not human effort. This budget covers the full session: codebase exploration, inversion analysis, planning, implementation, and testing. No story should be XL — those get split into sequential S/M stories.
 - If the PRD has no explicit priority scheme, the agent derives priorities from: dependency order (foundations first), user-facing value, and technical risk
 - GitHub Issues creation is always opt-in — generates a shell script the user reviews and runs, rather than executing 30-50 `gh` commands inline which would waste context

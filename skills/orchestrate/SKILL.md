@@ -10,7 +10,7 @@ argument-hint: <story map path or story IDs to run>
 
 Bridge between story decomposition and story execution. After `/decompose` produces a backlog of stories, this skill starts the orchestration pipeline — routing stories through specialized agents in the correct order, managing dependencies, detecting conflicts, and enforcing quality gates.
 
-Without this skill, stories sit in `.plans/STORIES-AI-*.md` as a static document. With it, they flow through: chief-ai-po (refine) → ai-architect → layoutplan → specialists → validators → demo-builder, with the orchestrator managing state, feedback loops, and human escalation at every step.
+Without this skill, stories sit in `.plans/STORIES-AI-*.md` as a static document. With it, they flow through: chief-ai-po (refine) → ai-architect → genai-layoutplan → specialists → validators → demo-builder, with the orchestrator managing state, feedback loops, and human escalation at every step.
 
 ## When to Use
 
@@ -19,7 +19,7 @@ Without this skill, stories sit in `.plans/STORIES-AI-*.md` as a static document
 - When you want automated conflict detection across stories (budget, architecture, resources)
 - When you need dual human-in-the-loop (operator + client) coordination
 
-For a **single task** without a story map, use the complexity gate in CLAUDE.md instead — it routes directly to `/ai-invert` → `layoutplan`.
+For a **single task** without a story map, use the complexity gate in CLAUDE.md instead — it routes directly to `/ai-invert` → `genai-layoutplan`.
 
 ## Input
 
@@ -136,7 +136,7 @@ Spawn the `orchestrator` agent on a separate thread with this context:
 > Decisions: `.plans/DECISIONS.md`
 > Learnings: `.plans/LEARNINGS.md`
 >
-> Start with the first unblocked story. Route through: TRIAGE (chief-ai-po refine) → DESIGN (ai-architect + invert + cost-estimator) → PLAN (layoutplan) → BUILD (use BUILD Dispatch Protocol: parse specialist tags, dispatch with payloads, enforce RAG→Prompt order, track completion) → HARDEN (eval-designer + guardrails-designer + ai-ops — if multiple gates fail, dispatch to different agents in parallel, severity-ranked) → DELIVER (demo-builder).
+> Start with the first unblocked story. Route through: TRIAGE (chief-ai-po refine) → DESIGN (ai-architect + invert + cost-estimator) → PLAN (genai-layoutplan) → BUILD (use BUILD Dispatch Protocol: parse specialist tags, dispatch with payloads, enforce RAG→Prompt order, track completion) → HARDEN (eval-designer + guardrails-designer + ai-ops — if multiple gates fail, dispatch to different agents in parallel, severity-ranked) → DELIVER (demo-builder).
 >
 > At each HUMAN escalation, pause and present the escalation payload using the standard format.
 > After each state transition, update PIPELINE-STATUS.md.
@@ -202,7 +202,7 @@ DESIGN:  orchestrator → ai-architect
            → Routes to /ai-invert (risks) + cost-estimator (budget) in parallel
            → Checks DECISIONS.md for constraints
 
-PLAN:    orchestrator → layoutplan
+PLAN:    orchestrator → genai-layoutplan
            → Reads inversion + ADR + cost envelope + learnings
            → Produces implementation plan with tasks
 

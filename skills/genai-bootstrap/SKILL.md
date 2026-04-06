@@ -1,5 +1,5 @@
 ---
-name: bootstrap
+name: genai-bootstrap
 description: Generate AI tool configuration for an existing project. Explores the codebase and produces context files, path-scoped pattern rules, landmine rules, and agents for Claude Code and VS Code Copilot. Run once per project.
 ---
 
@@ -389,8 +389,8 @@ Generate agents for the current tool. **Do not hardcode the agent list** — dyn
 **Claude Code** — copy each agent from `templates/claude/agents/*.md` to `.claude/agents/*.md`:
 
 Core agents (always install):
-- `layoutplan` — spawned by `/ai-invert` for implementation planning
-- `storymap` — spawned by `/decompose` for PRD decomposition
+- `genai-layoutplan` — spawned by `/ai-invert` for implementation planning
+- `genai-storymap` — spawned by `/decompose` for PRD decomposition
 - `chief-ai-po` — spawned by `/decompose` for AI-specific story decomposition (3 modes: decompose, refine, incorporate-feedback)
 
 Build specialists (install for AI projects):
@@ -427,7 +427,7 @@ Generate additional project-specific agents only if the project clearly warrants
 - [ ] Pattern rules in the current tool's format — aim for 15-40 depending on project complexity
 - [ ] Landmine rules in the current tool's format — aim for 5-15 depending on project maturity
 - [ ] `_TEMPLATE.md` in the rules directory — must include ALL sections from reference templates
-- [ ] Core agents: `layoutplan`, `storymap`, `chief-ai-po`
+- [ ] Core agents: `genai-layoutplan`, `genai-storymap`, `chief-ai-po`
 - [ ] Build specialists: `prompt-engineer`, `rag-advisor`, `integration-planner`
 - [ ] Validation agents: `eval-designer`, `guardrails-designer`, `prompt-adversary`, `ai-ops`
 - [ ] Orchestration agents: `orchestrator`, `ai-architect`, `cost-estimator`
@@ -463,7 +463,7 @@ Universal:
 Tool-specific:
 - [context file] — [sections included]
 - [N] rule files — [N] patterns, [N] landmines — [list names]
-- [N] agent files — layoutplan, storymap, chief-ai-po [+ any project-specific]
+- [N] agent files — genai-layoutplan, genai-storymap, chief-ai-po [+ any project-specific]
 
 Module-level:
 - [N] CLAUDE.md files — [list directories]

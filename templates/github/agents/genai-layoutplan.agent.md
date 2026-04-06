@@ -1,5 +1,5 @@
 ---
-name: layoutplan
+name: genai-layoutplan
 description: Build implementation plans from inversion analysis. Reads .plans/INVERT-*.md files, architecture decisions, cost constraints, and accumulated learnings to produce structured, session-surviving plan files. Runs on a separate thread to keep the main context clean for coding.
 tools: search/codebase
 ---

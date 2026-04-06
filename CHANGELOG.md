@@ -2,6 +2,25 @@
 
 All notable changes to north-starr-genai will be documented in this file.
 
+## [0.13.0] — 2026-04-06
+
+### Overview
+
+Rename conflicting skills and agents to avoid namespace collisions with North Starr. Skills `bootstrap` → `genai-bootstrap`, `invert` → `genai-invert`. Agents `layoutplan` → `genai-layoutplan`, `storymap` → `genai-storymap`. All cross-references, templates, CLI, CI, and documentation updated.
+
+### Breaking Changes
+
+- **Skill renamed:** `/bootstrap` → `/genai-bootstrap`
+- **Skill renamed:** `/invert` → `/genai-invert`
+- **Agent renamed:** `layoutplan` → `genai-layoutplan`
+- **Agent renamed:** `storymap` → `genai-storymap`
+
+### Migration
+
+Run `/sync` in consuming projects after updating to v0.13.0. The sync skill will replace old agent files with the renamed versions. If you have custom references to the old names in project-specific sections of CLAUDE.md or AGENTS.md, update them manually.
+
+---
+
 ## [0.12.0] — 2026-04-06
 
 ### Overview

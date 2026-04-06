@@ -49,8 +49,8 @@ jobs:
 
       - name: Agent templates exist
         run: |
-          test -f templates/claude/agents/layoutplan.md || { echo "ERROR: Claude Code layoutplan agent missing"; exit 1; }
-          test -f templates/github/agents/layoutplan.agent.md || { echo "ERROR: Copilot layoutplan agent missing"; exit 1; }
+          test -f templates/claude/agents/genai-layoutplan.md || { echo "ERROR: Claude Code genai-layoutplan agent missing"; exit 1; }
+          test -f templates/github/agents/genai-layoutplan.agent.md || { echo "ERROR: Copilot genai-layoutplan agent missing"; exit 1; }
           test -f templates/CLAUDE.md || { echo "ERROR: CLAUDE.md template missing"; exit 1; }
           test -f templates/AGENTS.md || { echo "ERROR: AGENTS.md template missing"; exit 1; }
           echo "All templates valid"

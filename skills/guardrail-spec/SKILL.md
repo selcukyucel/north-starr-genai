@@ -432,7 +432,7 @@ Spec saved to `.plans/GUARDRAILS-<name>.md`.
 
 If the risk level is HIGH, add:
 
-> "Risk level is HIGH. Recommend running `/ai-invert` if not already done, and spawning the `layoutplan` agent to break guardrail implementation into tracked tasks."
+> "Risk level is HIGH. Recommend running `/ai-invert` if not already done, and spawning the `genai-layoutplan` agent to break guardrail implementation into tracked tasks."
 
 ## Notes
 

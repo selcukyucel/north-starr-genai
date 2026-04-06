@@ -379,4 +379,4 @@ After producing the ADR, the orchestrator should route in parallel:
 1. **invert** — receives the ADR file path, performs risk/failure-mode analysis on the proposed architecture
 2. **cost-estimator** — receives the ADR file path, validates the cost envelope against project budget and historical spend
 
-Both agents run concurrently. Their outputs feed into the `layoutplan` agent downstream.
+Both agents run concurrently. Their outputs feed into the `genai-layoutplan` agent downstream.

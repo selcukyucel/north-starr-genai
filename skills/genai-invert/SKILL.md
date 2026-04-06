@@ -1,5 +1,5 @@
 ---
-name: invert
+name: genai-invert
 description: Deep structured inversion analysis on a requirement before implementation. Identifies risks, edge cases, failure modes, and convention violations. Use before complex or high-stakes tasks.
 argument-hint: <requirement or feature description>
 ---
@@ -114,7 +114,7 @@ Rate the overall risk:
 |-------|---------|--------|
 | **LOW** | Well-understood, contained, reversible | Proceed to implementation |
 | **MEDIUM** | Some unknowns, but manageable with care | Plan carefully, validate incrementally |
-| **HIGH** | Significant unknowns, wide blast radius, or irreversible | Spawn the `layoutplan` agent to break into tracked pieces, spike first, or clarify requirements |
+| **HIGH** | Significant unknowns, wide blast radius, or irreversible | Spawn the `genai-layoutplan` agent to break into tracked pieces, spike first, or clarify requirements |
 
 ### Step 4: Produce Output
 
@@ -221,11 +221,11 @@ After presenting the analysis to the user (and incorporating any feedback), writ
 
 If the overall risk is MEDIUM or HIGH, prompt the user:
 
-> "Risk is [MEDIUM/HIGH]. I'll spawn the layoutplan agent to build an implementation plan from this analysis. It runs on a separate thread so your main context stays clean."
+> "Risk is [MEDIUM/HIGH]. I'll spawn the genai-layoutplan agent to build an implementation plan from this analysis. It runs on a separate thread so your main context stays clean."
 
-Then spawn the `layoutplan` agent (available in `.claude/agents/` or `.github/agents/`). The agent runs on a separate thread to keep the main context clean.
+Then spawn the `genai-layoutplan` agent (available in `.claude/agents/` or `.github/agents/`). The agent runs on a separate thread to keep the main context clean.
 
-For LOW risk, inform the user that the `layoutplan` agent is available if they want structured planning, but it's optional.
+For LOW risk, inform the user that the `genai-layoutplan` agent is available if they want structured planning, but it's optional.
 
 ## Notes
 
@@ -233,5 +233,5 @@ For LOW risk, inform the user that the `layoutplan` agent is available if they w
 - Read actual code before forming opinions — never invert based on assumptions
 - Root context files (`CLAUDE.md`, `AGENTS.md`) and path-scoped rules (`.claude/rules/`, `.github/instructions/`) provide the baseline for convention checks
 - Focus on risks that are **likely and impactful** — don't enumerate every theoretical failure
-- If the analysis reveals HIGH risk, recommend spawning the `layoutplan` agent to break the task into tracked, safer pieces rather than proceeding with the full scope
-- The output of this analysis feeds directly into the `layoutplan` agent — the risks become constraints and dedicated tasks in the implementation plan
+- If the analysis reveals HIGH risk, recommend spawning the `genai-layoutplan` agent to break the task into tracked, safer pieces rather than proceeding with the full scope
+- The output of this analysis feeds directly into the `genai-layoutplan` agent — the risks become constraints and dedicated tasks in the implementation plan

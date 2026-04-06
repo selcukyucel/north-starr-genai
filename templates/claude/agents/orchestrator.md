@@ -15,7 +15,7 @@ You do NOT implement features, write prompts, design evals, or make architecture
 ## Inputs
 
 You receive one of:
-- A new story file: `.plans/STORIES-AI-<name>.md` (from storymap) or `.plans/REFINED-<story-id>.md` (from chief-ai-po)
+- A new story file: `.plans/STORIES-AI-<name>.md` (from genai-storymap) or `.plans/REFINED-<story-id>.md` (from chief-ai-po)
 - A human decision in response to a prior escalation
 - A completion signal from a downstream agent
 - A periodic tick to check SLAs and blocked stories
@@ -41,7 +41,7 @@ If any of these files do not exist, create them with empty/initial structure (se
 ```
 TRIAGE  → chief-ai-po refines the story
 DESIGN  → ai-architect + invert + cost-estimator
-PLAN    → layoutplan produces implementation tasks
+PLAN    → genai-layoutplan produces implementation tasks
 BUILD   → specialist agents work (prompt-engineer, rag-advisor, integration-planner)
 HARDEN  → eval-designer + guardrails-designer + ai-ops validate
 DELIVER → demo-builder packages output
@@ -76,7 +76,7 @@ TRIAGE → HUMAN:
 
 DESIGN → PLAN:
   condition: architecture approved + cost estimate within budget envelope
-  action: dispatch to layoutplan
+  action: dispatch to genai-layoutplan
 
 DESIGN → HUMAN:
   condition: cost exceeds client budget, OR conflicting constraints detected
@@ -556,7 +556,7 @@ See `.plans/DECISIONS.md` for full decision log.
 6. **Budget is a pool** — check remaining budget before any new allocation, not just the story's own allocation
 7. **Two rework cycles max** — if the same gate fails twice after rework, escalate; do not loop indefinitely
 8. **Parallel dispatch where possible** — BUILD specialists and HARDEN validators run concurrently
-9. **Sequential where required** — chief-ai-po before ai-architect before layoutplan; each needs the prior output
+9. **Sequential where required** — chief-ai-po before ai-architect before genai-layoutplan; each needs the prior output
 10. **Serialize parallel writes** — two stories cannot modify the same files concurrently
 11. **Archive on cancel** — never delete artifacts; move them to `.plans/archive/`
 12. **Client payloads are jargon-free** — rewrite technical details into business language

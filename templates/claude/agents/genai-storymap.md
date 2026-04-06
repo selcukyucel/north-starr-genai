@@ -1,7 +1,9 @@
 ---
-name: storymap
+name: genai-storymap
 description: Decompose PRDs into epics and user stories. Reads .plans/PRD-*.md files and produces structured story maps with dependencies and priorities. Runs on a separate thread to keep the main context clean.
-tools: search/codebase
+model: opus
+tools: Read, Write, Glob, Grep
+memory: project
 ---
 
 # Story Map Agent
@@ -35,7 +37,7 @@ Assign each epic an ID: `E1`, `E2`, `E3`, etc. Order by dependency (foundations 
 For each epic, write **user stories** that together deliver the epic's capability. Each story should:
 
 - **Be completable in a single AI session** — the story + its context (files, tests, inversion analysis) must fit comfortably within ~200K tokens. If a story would require loading 10+ files or spanning multiple modules, break it down further. AI quality degrades with context rot well before the window fills.
-- **Be self-contained enough** to serve as input to `/invert` for risk analysis
+- **Be self-contained enough** to serve as input to `/genai-invert` for risk analysis
 - **Use "As a... I want... so that..." format** — identify the right user role
 - **Have testable acceptance criteria** — each criterion must be verifiable by running code, reading output, or inspecting a file. Never use vague criteria like "follows design system", "matches patterns", "is consistent with", or "follows best practices" — instead name the specific elements (e.g., "uses FordPass `PrimaryButton` component for CTA" instead of "follows FordPass design system").
 - **Include technical notes** — brief pointers to implementation approach, APIs, components
@@ -98,7 +100,7 @@ Mark stories as "Invert Candidate: Yes" when they have:
 - Performance-critical paths
 - High hallucination risk (e.g., complex business rules that must be precise)
 
-These stories should go through `/invert` before implementation. The inversion analysis helps the AI stay grounded by making risks and constraints explicit before context fills up with implementation details.
+These stories should go through `/genai-invert` before implementation. The inversion analysis helps the AI stay grounded by making risks and constraints explicit before context fills up with implementation details.
 
 ### 8. Write the Story Map
 
@@ -168,13 +170,13 @@ Write `.plans/STORIES-<name>.md` (using the same `<name>` as the PRD file) with 
 
 ## Integration Guide
 
-### Feeding stories into /invert → layoutplan
+### Feeding stories into /genai-invert → genai-layoutplan
 
 Each story is designed to serve as input to the existing north-starr workflow:
 
 1. Pick a story with no unresolved dependencies
-2. Run `/invert <story description + acceptance criteria>`
-3. The inversion analysis feeds into `layoutplan` automatically
+2. Run `/genai-invert <story description + acceptance criteria>`
+3. The inversion analysis feeds into `genai-layoutplan` automatically
 4. Implementation proceeds per the plan
 
 **Suggested implementation order (respecting dependencies):**
@@ -182,7 +184,7 @@ List ALL stories in recommended execution order, grouped by phase. Stories with 
 
 ### Story IDs as file names
 
-When running `/invert` for a story, use the story ID in the kebab-case name:
+When running `/genai-invert` for a story, use the story ID in the kebab-case name:
 - S1.1 "Upload documents" → `.plans/INVERT-s1-1-upload-documents.md` → `.plans/PLAN-s1-1-upload-documents.md`
 - **Always use the `INVERT-` and `PLAN-` prefixes** with the story ID in kebab-case (e.g., `s3-2` not `S3.2`)
 - This creates natural traceability: `PRD-<name>.md` → `STORIES-<name>.md` → `INVERT-s1-1-*.md` → `PLAN-s1-1-*.md`
@@ -210,14 +212,14 @@ Starting stories (no dependencies):
 • S1.1 — <title> [size]
 • S2.1 — <title> [size]
 
-Invert candidates: <count> stories flagged for /invert analysis
+Invert candidates: <count> stories flagged for /genai-invert analysis
 ```
 
 ## Important
 
 - Read the FULL PRD — do not summarize or skip sections
 - Every feature area in the PRD must map to at least one epic
-- Stories must be self-contained — usable as `/invert` input without the full PRD context
+- Stories must be self-contained — usable as `/genai-invert` input without the full PRD context
 - Do not implement anything — only produce the story map
 - If `.plans/` directory doesn't exist, create it
 - If a `STORIES-<name>.md` already exists, ask whether to overwrite or create a versioned copy

@@ -7,7 +7,7 @@ description: "Inject managed sections into existing CLAUDE.md and AGENTS.md afte
 
 ## Purpose
 
-After updating the North Starr GenAI plugin, inject any new or updated managed sections into your existing CLAUDE.md and AGENTS.md without re-running `/bootstrap`. This preserves all your project-specific content (architecture, module map, vocabulary, etc.) while adding new North Starr GenAI sections.
+After updating the North Starr GenAI plugin, inject any new or updated managed sections into your existing CLAUDE.md and AGENTS.md without re-running `/genai-bootstrap`. This preserves all your project-specific content (architecture, module map, vocabulary, etc.) while adding new North Starr GenAI sections.
 
 **This skill is for Claude Code plugin users only.** If you installed via Homebrew, run `north-starr-genai update` from the terminal instead — it does the same thing without using AI tokens.
 
@@ -15,7 +15,7 @@ After updating the North Starr GenAI plugin, inject any new or updated managed s
 
 - After updating the North Starr GenAI plugin in Claude Code
 - When you see new features in the skills (like auto-learn) but your CLAUDE.md and AGENTS.md don't have them
-- As a lightweight alternative to re-running `/bootstrap` when only managed sections need updating
+- As a lightweight alternative to re-running `/genai-bootstrap` when only managed sections need updating
 
 ## How It Works
 
@@ -93,7 +93,7 @@ For each managed section defined in the **Canonical Sections** below, apply the 
 |------------------------------|--------|
 | Section exists with markers AND content is **identical** to canonical | **Skip** — already up to date, no write needed |
 | Section exists with markers AND content **differs** from canonical | **Replace** everything between the open and close markers (inclusive) with the canonical version below |
-| Section heading (e.g. `## How to Approach Tasks`) exists but WITHOUT markers | **Skip** — tell the user: "Section exists without markers. Run `/bootstrap` to get marker support, or manually wrap the section with markers." |
+| Section heading (e.g. `## How to Approach Tasks`) exists but WITHOUT markers | **Skip** — tell the user: "Section exists without markers. Run `/genai-bootstrap` to get marker support, or manually wrap the section with markers." |
 | Section is completely absent | **Append** the canonical version at the end of the file |
 
 **Comparison:** Compare the existing content (between markers) with the canonical version. Normalize whitespace before comparing — trailing newlines and minor formatting differences should not trigger an unnecessary rewrite.
@@ -110,7 +110,7 @@ Sync preview:
     auto-learn — APPEND (section missing)
   Agents:
     chief-ai-po.md — ADD (new)
-    layoutplan.md — SKIP (identical)
+    genai-layoutplan.md — SKIP (identical)
 
 Apply changes? (y/n)
 ```
@@ -163,7 +163,7 @@ Sync agent definitions for each enabled tool:
 2. For each agent, copy to `.github/agents/` — create if missing, update if content differs, skip if identical
 3. Create `.github/agents/` if it doesn't exist
 
-**Do not hardcode the agent list.** Dynamically list all files in the template directories. This ensures new agents added in future plugin versions are automatically synced. Current agents as of v4.3.0: `layoutplan`, `storymap`, `chief-ai-po`.
+**Do not hardcode the agent list.** Dynamically list all files in the template directories. This ensures new agents added in future plugin versions are automatically synced. Current agents as of v4.3.0: `genai-layoutplan`, `genai-storymap`, `chief-ai-po`.
 
 ### Step 4b: Validate Sync Results
 
@@ -220,15 +220,15 @@ Before ANY code change, print this assessment:
 **Gate Rules:**
 - **Fast-path**: Q0 = Yes, all others No → state the file and proceed. No table needed.
 - Q0 = No → Write evals for current behavior FIRST (BASELINE phase)
-- Q1 or Q2 = Yes → Run `/ai-invert` automatically. Once the inversion analysis is ready, ask "Proceed with layout plan?" before spawning the `layoutplan` agent. Do not proceed without approval.
+- Q1 or Q2 = Yes → Run `/ai-invert` automatically. Once the inversion analysis is ready, ask "Proceed with layout plan?" before spawning the `genai-layoutplan` agent. Do not proceed without approval.
 - Q3 = Yes → Run `/baseline` before any change
 - Q4 = Yes → Run `/cost-estimate` before proceeding
-- Two or more of Q1-Q4 = Yes → Spawn `layoutplan` agent for structured planning
+- Two or more of Q1-Q4 = Yes → Spawn `genai-layoutplan` agent for structured planning
 - All Low → State files and wait for confirmation
 
 **Workflow — 5 phases executed in order:**
 
-**1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `layoutplan` for complex tasks.
+**1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `genai-layoutplan` for complex tasks.
 
 **2. BUILD** — Implement the plan. Spawn specialist agents based on what the plan involves:
 - Plan includes prompt design or prompt changes → spawn `prompt-engineer` agent (designs/versions prompts, writes to `.plans/PROMPTS-<name>/`)
@@ -278,15 +278,15 @@ Before ANY code change, print this assessment:
 **Gate Rules:**
 - **Fast-path**: Q0 = Yes, all others No → state the file and proceed. No table needed.
 - Q0 = No → Write evals for current behavior FIRST (BASELINE phase)
-- Q1 or Q2 = Yes → Run `/ai-invert` automatically. Once the inversion analysis is ready, use `vscode_askQuestions` to ask "Proceed with layout plan?" (options: "Yes, run layoutplan", "No, let me review first"). Once the plan is ready, use `vscode_askQuestions` again to ask "Plan is ready. Start implementation?" (options: "Yes, start coding", "No, I want to adjust the plan"). Do not proceed without approval at each gate.
+- Q1 or Q2 = Yes → Run `/ai-invert` automatically. Once the inversion analysis is ready, use `vscode_askQuestions` to ask "Proceed with layout plan?" (options: "Yes, run genai-layoutplan", "No, let me review first"). Once the plan is ready, use `vscode_askQuestions` again to ask "Plan is ready. Start implementation?" (options: "Yes, start coding", "No, I want to adjust the plan"). Do not proceed without approval at each gate.
 - Q3 = Yes → Run `/baseline` before any change
 - Q4 = Yes → Run `/cost-estimate` before proceeding
-- Two or more of Q1-Q4 = Yes → Spawn `layoutplan` agent for structured planning
+- Two or more of Q1-Q4 = Yes → Spawn `genai-layoutplan` agent for structured planning
 - All Low → State files and wait for confirmation
 
 **Workflow — 5 phases executed in order:**
 
-**1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `layoutplan` for complex tasks.
+**1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `genai-layoutplan` for complex tasks.
 
 **2. BUILD** — Implement the plan. Spawn specialist agents based on what the plan involves:
 - Plan includes prompt design or prompt changes → spawn `prompt-engineer` agent (designs/versions prompts, writes to `.plans/PROMPTS-<name>/`)
@@ -332,4 +332,4 @@ Run `/learn` automatically when: user corrects your approach, same fix requested
 - Only managed sections (wrapped in `<!-- [NORTH-STARR-GENAI:...] -->` markers) are touched
 - All project-specific content is preserved
 - When new managed sections are added in future versions, they'll be included in this skill's Canonical Sections — running `/sync` after a plugin update will pick them up
-- If you want full marker support on a pre-v2.3.9 file, run `/bootstrap` once to regenerate with markers
+- If you want full marker support on a pre-v2.3.9 file, run `/genai-bootstrap` once to regenerate with markers

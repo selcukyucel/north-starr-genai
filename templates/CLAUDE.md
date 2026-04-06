@@ -18,15 +18,15 @@ Before ANY code change, print this assessment:
 **Gate Rules:**
 - **Fast-path**: Q0 = Yes, all others No → state the file and proceed. No table needed.
 - Q0 = No → Write evals for current behavior FIRST (BASELINE phase)
-- Q1 or Q2 = Yes → Run `/ai-invert` automatically. Once the inversion analysis is ready, ask "Proceed with layout plan?" before spawning the `layoutplan` agent. Do not proceed without approval.
+- Q1 or Q2 = Yes → Run `/ai-invert` automatically. Once the inversion analysis is ready, ask "Proceed with layout plan?" before spawning the `genai-layoutplan` agent. Do not proceed without approval.
 - Q3 = Yes → Run `/baseline` before any change
 - Q4 = Yes → Run `/cost-estimate` before proceeding
-- Two or more of Q1-Q4 = Yes → Spawn `layoutplan` agent for structured planning
+- Two or more of Q1-Q4 = Yes → Spawn `genai-layoutplan` agent for structured planning
 - All Low → State files and wait for confirmation
 
 **Workflow — 5 phases executed in order:**
 
-**1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `layoutplan` for complex tasks.
+**1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `genai-layoutplan` for complex tasks.
 
 **2. BUILD** — Implement the plan. Check each task's `**Specialists needed:**` field and spawn the required agents:
 - `prompt-engineer` → designs/versions prompts, writes to `.plans/PROMPTS-<name>/`

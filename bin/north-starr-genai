@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.12.0"
+VERSION="0.13.0"
 NORTH_STARR_GENAI_HOME="${NORTH_STARR_GENAI_HOME:-}"
 
 # Resolve where templates live
@@ -123,7 +123,7 @@ print_error() {
 is_starter_template() {
   local file="$1"
   # Old starter templates (v2.3.x and earlier)
-  grep -q "Run \`/bootstrap\` to generate" "$file" 2>/dev/null && return 0
+  grep -q "Run \`/genai-bootstrap\` to generate" "$file" 2>/dev/null && return 0
   # New starter templates (v2.5+) — placeholder text not yet replaced
   grep -q "\[One-sentence project description\]" "$file" 2>/dev/null && return 0
   return 1
@@ -194,7 +194,7 @@ inject_managed_sections() {
 
       if [[ -n "$section_heading" ]] && grep -qF "$section_heading" "$target_file" 2>/dev/null; then
         # Heading exists without markers — skip to avoid duplication
-        print_info "Skipped ${file_name} section: ${section} (heading exists without markers — run /bootstrap to update)"
+        print_info "Skipped ${file_name} section: ${section} (heading exists without markers — run /genai-bootstrap to update)"
       else
         # Truly new section — append it
         printf '\n%s\n' "$new_content" >> "$target_file"
@@ -388,20 +388,20 @@ cmd_init() {
   echo ""
   echo -e "  ${BOLD}What's next:${NC}"
   echo -e "  ${DIM}1.${NC} Open VS Code with GitHub Copilot"
-  echo -e "  ${DIM}2.${NC} Run ${CYAN}/bootstrap${NC} to generate project config from existing code"
+  echo -e "  ${DIM}2.${NC} Run ${CYAN}/genai-bootstrap${NC} to generate project config from existing code"
   echo -e "  ${DIM}3.${NC} Start working — your AI tool auto-loads the generated context"
   echo ""
   echo -e "  ${DIM}Available skills:${NC}"
   echo -e "    /ai-invert             — Deep AI risk analysis before complex tasks"
   echo -e "    /baseline              — Generate project baseline from existing code"
   echo -e "    /cost-estimate         — Estimate AI development costs"
-  echo -e "    /bootstrap             — Generate project config from existing code"
+  echo -e "    /genai-bootstrap       — Generate project config from existing code"
   echo -e "    /learn                 — Update config from experience"
   echo -e "    /generate-commit        — Generate commit messages"
   echo -e "    /generate-pr            — Generate PR descriptions"
   echo ""
   echo -e "  ${DIM}Agent (spawned automatically by /ai-invert):${NC}"
-  echo -e "    layoutplan             — Break complex tasks into persistent plans"
+  echo -e "    genai-layoutplan       — Break complex tasks into persistent plans"
   echo ""
   echo -e "  ${DIM}For Claude Code users: install via the marketplace instead.${NC}"
   echo -e "  ${DIM}Learn more: https://github.com/selcukyucel/north-starr-genai${NC}"
@@ -501,7 +501,7 @@ cmd_status() {
   # Check AGENTS.md (universal)
   if [[ -f "$target_dir/AGENTS.md" ]]; then
     if is_starter_template "$target_dir/AGENTS.md"; then
-      print_success "AGENTS.md — starter (run /bootstrap to generate project config)"
+      print_success "AGENTS.md — starter (run /genai-bootstrap to generate project config)"
     else
       print_success "AGENTS.md — project-specific"
     fi
@@ -566,7 +566,7 @@ cmd_status() {
   if [[ "$initialized" == "false" ]]; then
     print_info "Run ${BOLD}north-starr-genai init${NC} to install North Starr GenAI."
   elif [[ "$bootstrapped" == "false" ]]; then
-    echo -e "  ${YELLOW}${BOLD}Skills installed.${NC} Run ${CYAN}/bootstrap${NC} to generate config from existing code."
+    echo -e "  ${YELLOW}${BOLD}Skills installed.${NC} Run ${CYAN}/genai-bootstrap${NC} to generate config from existing code."
   else
     echo -e "  ${GREEN}${BOLD}North Starr GenAI is fully configured.${NC}"
   fi
@@ -665,13 +665,13 @@ cmd_help() {
   echo -e "    /ai-invert             — Deep AI risk analysis before complex tasks"
   echo -e "    /baseline              — Generate project baseline from existing code"
   echo -e "    /cost-estimate         — Estimate AI development costs"
-  echo -e "    /bootstrap             — Generate project config from existing code"
+  echo -e "    /genai-bootstrap       — Generate project config from existing code"
   echo -e "    /learn                 — Update config from experience"
   echo -e "    /generate-commit        — Generate commit messages"
   echo -e "    /generate-pr            — Generate PR descriptions"
   echo ""
   echo -e "${BOLD}  Agent (spawned automatically by /ai-invert):${NC}"
-  echo -e "    layoutplan             — Break complex tasks into persistent plans"
+  echo -e "    genai-layoutplan       — Break complex tasks into persistent plans"
   echo ""
   echo -e "  ${DIM}https://github.com/selcukyucel/north-starr-genai${NC}"
   echo ""

@@ -10,7 +10,7 @@ argument-hint: <requirement or feature description>
 
 Before committing to implementation on an AI automation, systematically invert the requirement: instead of "how do I build this," ask "how could this fail?" Produces a structured risk analysis with AI-specific dimensions that feeds directly into planning.
 
-This extends the standard `/invert` with dimensions specific to AI/ML systems: prompt fragility, hallucination, cost, model drift, data pipelines, and compliance. Use this for any change that touches prompts, models, RAG pipelines, or AI-powered outputs. For non-AI code changes within an AI project, the standard `/invert` is still available.
+This extends the standard `/genai-invert` with dimensions specific to AI/ML systems: prompt fragility, hallucination, cost, model drift, data pipelines, and compliance. Use this for any change that touches prompts, models, RAG pipelines, or AI-powered outputs. For non-AI code changes within an AI project, the standard `/genai-invert` is still available.
 
 Run this **before** implementation for complex or high-stakes AI work. For routine tasks, the lightweight risk assessment in the project `CLAUDE.md` is sufficient.
 
@@ -176,7 +176,7 @@ Rate the overall risk (based on NEW and AMPLIFIED risks only — pre-existing ri
 |-------|---------|--------|
 | **LOW** | Well-understood, contained, reversible | Proceed to implementation |
 | **MEDIUM** | Some unknowns, but manageable with care | Plan carefully, validate incrementally |
-| **HIGH** | Significant unknowns, wide blast radius, or irreversible | Spawn the `layoutplan` agent to break into tracked pieces, spike first, or clarify requirements |
+| **HIGH** | Significant unknowns, wide blast radius, or irreversible | Spawn the `genai-layoutplan` agent to break into tracked pieces, spike first, or clarify requirements |
 
 ### Step 4: Produce Output
 
@@ -290,11 +290,11 @@ After presenting the analysis to the user (and incorporating any feedback), writ
 
 If the overall risk is MEDIUM or HIGH, prompt the user:
 
-> "Risk is [MEDIUM/HIGH]. I'll spawn the layoutplan agent to build an implementation plan from this analysis. It runs on a separate thread so your main context stays clean."
+> "Risk is [MEDIUM/HIGH]. I'll spawn the genai-layoutplan agent to build an implementation plan from this analysis. It runs on a separate thread so your main context stays clean."
 
-Then spawn the `layoutplan` agent (available in `.claude/agents/` or `.github/agents/`). The agent runs on a separate thread to keep the main context clean.
+Then spawn the `genai-layoutplan` agent (available in `.claude/agents/` or `.github/agents/`). The agent runs on a separate thread to keep the main context clean.
 
-For LOW risk, inform the user that the `layoutplan` agent is available if they want structured planning, but it's optional.
+For LOW risk, inform the user that the `genai-layoutplan` agent is available if they want structured planning, but it's optional.
 
 ## Notes
 
@@ -304,7 +304,7 @@ For LOW risk, inform the user that the `layoutplan` agent is available if they w
 - Root context files (`CLAUDE.md`, `AGENTS.md`) and path-scoped rules provide the baseline for convention checks
 - `.plans/DECISIONS.md` and `.plans/LEARNINGS.md` provide accumulated knowledge from prior stories — read them if they exist
 - Focus on risks that are **likely and impactful** — don't enumerate every theoretical failure
-- Dimensions B-H are AI-specific; dimensions A, I, J overlap with the standard `/invert`
-- If the analysis reveals HIGH risk, recommend spawning the `layoutplan` agent to break the task into tracked, safer pieces
-- The output of this analysis feeds directly into the `layoutplan` agent — the risks become constraints and dedicated tasks in the implementation plan
-- For non-AI code changes within an AI project, use the standard `/invert` instead
+- Dimensions B-H are AI-specific; dimensions A, I, J overlap with the standard `/genai-invert`
+- If the analysis reveals HIGH risk, recommend spawning the `genai-layoutplan` agent to break the task into tracked, safer pieces
+- The output of this analysis feeds directly into the `genai-layoutplan` agent — the risks become constraints and dedicated tasks in the implementation plan
+- For non-AI code changes within an AI project, use the standard `/genai-invert` instead
