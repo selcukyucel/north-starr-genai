@@ -2,6 +2,22 @@
 
 All notable changes to north-starr-genai will be documented in this file.
 
+## [0.14.0] — 2026-04-06
+
+### Overview
+
+Rename `/sync` skill to `/genai-sync` to avoid namespace collision with North Starr's `/sync` skill. All cross-references across skills, CLI, rules, and documentation updated.
+
+### Breaking Changes
+
+- **Skill renamed:** `/sync` → `/genai-sync`
+
+### Migration
+
+Run `/genai-sync` in consuming projects after updating to v0.14.0.
+
+---
+
 ## [0.13.0] — 2026-04-06
 
 ### Overview
@@ -17,7 +33,7 @@ Rename conflicting skills and agents to avoid namespace collisions with North St
 
 ### Migration
 
-Run `/sync` in consuming projects after updating to v0.13.0. The sync skill will replace old agent files with the renamed versions. If you have custom references to the old names in project-specific sections of CLAUDE.md or AGENTS.md, update them manually.
+Run `/genai-sync` in consuming projects after updating to v0.13.0. The sync skill will replace old agent files with the renamed versions. If you have custom references to the old names in project-specific sections of CLAUDE.md or AGENTS.md, update them manually.
 
 ---
 
@@ -186,7 +202,7 @@ First release of North Starr GenAI — an agentic AI development workflow framew
 #### Extended Skills (from North Starr)
 - `/bootstrap` — AI stack detection, AI-specific patterns/landmines, AI architecture guidance, installs all 14 agents, `NORTH-STARR-GENAI:` managed sections
 - `/learn` — AI-specific auto-triggers (prompt regression, model quirks, cost optimization, eval thresholds, guardrail gaps, hallucination patterns, data pipeline quirks)
-- `/sync` — `NORTH-STARR-GENAI:` marker prefix, v2.0 AI complexity gate with 5-phase workflow
+- `/genai-sync` — `NORTH-STARR-GENAI:` marker prefix, v2.0 AI complexity gate with 5-phase workflow
 
 #### Inherited Skills (from North Starr, unchanged)
 - `/invert`, `/decompose`, `/generate-commit`, `/generate-pr`, `/analyze-code`, `/report-weekly`, `/autoimprove`

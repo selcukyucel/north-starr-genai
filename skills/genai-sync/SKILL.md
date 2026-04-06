@@ -1,5 +1,5 @@
 ---
-name: sync
+name: genai-sync
 description: "Inject managed sections into existing CLAUDE.md and AGENTS.md after a North Starr GenAI plugin update without re-bootstrapping. Preserves all project-specific content."
 ---
 
@@ -67,7 +67,7 @@ Before syncing, check whether the installed plugin is stale. This prevents synci
    ⚠ Plugin cache was stale (HEAD: <old> → <new>). Auto-updated. Continuing sync with latest templates.
    ```
 
-   Proceed to Step 1 — do NOT stop or ask the user to restart. The sync will now read from the updated marketplace directory, which has the latest templates. A full Claude Code restart is not required for `/sync` to work correctly since it reads templates directly from the filesystem.
+   Proceed to Step 1 — do NOT stop or ask the user to restart. The sync will now read from the updated marketplace directory, which has the latest templates. A full Claude Code restart is not required for `/genai-sync` to work correctly since it reads templates directly from the filesystem.
 
 5. **Version cross-check (optional):** If `.claude-plugin/marketplace.json` is readable, compare its `metadata.version` with the version in the marketplace cache's `marketplace.json`. Log the versions in the sync preview for transparency:
    ```
@@ -115,7 +115,7 @@ Sync preview:
 Apply changes? (y/n)
 ```
 
-Wait for user confirmation before writing. If the user runs `/sync` with `--force` or says "just do it", skip the preview.
+Wait for user confirmation before writing. If the user runs `/genai-sync` with `--force` or says "just do it", skip the preview.
 
 ### Step 3: Reorder Sections
 
@@ -197,7 +197,7 @@ If any check fails, present the issue before the summary so the user can fix it.
 
 ## Canonical Sections
 
-These are the managed sections that `/sync` injects. CLAUDE.md and AGENTS.md get **different variants** of the `how-to-approach-tasks` section — CLAUDE.md uses plain text prompts while AGENTS.md uses `vscode_askQuestions`.
+These are the managed sections that `/genai-sync` injects. CLAUDE.md and AGENTS.md get **different variants** of the `how-to-approach-tasks` section — CLAUDE.md uses plain text prompts while AGENTS.md uses `vscode_askQuestions`.
 
 ### Section: `how-to-approach-tasks` (CLAUDE.md variant)
 
@@ -331,5 +331,5 @@ Run `/learn` automatically when: user corrects your approach, same fix requested
 - Brew/CLI users should run `north-starr-genai update` instead — same result, no AI tokens
 - Only managed sections (wrapped in `<!-- [NORTH-STARR-GENAI:...] -->` markers) are touched
 - All project-specific content is preserved
-- When new managed sections are added in future versions, they'll be included in this skill's Canonical Sections — running `/sync` after a plugin update will pick them up
+- When new managed sections are added in future versions, they'll be included in this skill's Canonical Sections — running `/genai-sync` after a plugin update will pick them up
 - If you want full marker support on a pre-v2.3.9 file, run `/genai-bootstrap` once to regenerate with markers

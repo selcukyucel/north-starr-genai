@@ -22,9 +22,9 @@ git pull origin main && north-starr-genai cache-update
 
 This fetches the latest marketplace commit, resets the local clone, and
 clears the install cache. Then restart Claude Code (or `/plugin install
-north-starr-genai`) and run `/sync` in consuming projects.
+north-starr-genai`) and run `/genai-sync` in consuming projects.
 
-`/sync` also detects staleness automatically — if the plugin cache is behind
+`/genai-sync` also detects staleness automatically — if the plugin cache is behind
 `origin/main`, it warns and stops before syncing stale templates.
 
 ## Manual fallback
@@ -35,7 +35,7 @@ If `north-starr-genai cache-update` isn't available (older CLI version):
 git pull origin main
 cd ~/.claude/plugins/marketplaces/north-starr-genai && git fetch origin && git reset --hard origin/main && cd -
 rm -rf ~/.claude/plugins/cache/north-starr-genai
-# then /plugin install north-starr-genai + /sync
+# then /plugin install north-starr-genai + /genai-sync
 ```
 
 ## Why this matters

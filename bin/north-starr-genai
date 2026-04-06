@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.13.0"
+VERSION="0.14.0"
 NORTH_STARR_GENAI_HOME="${NORTH_STARR_GENAI_HOME:-}"
 
 # Resolve where templates live
@@ -633,7 +633,7 @@ cmd_cache_update() {
   echo ""
   echo -e "${GREEN}${BOLD}  Done!${NC} Plugin cache updated."
   echo -e "  ${DIM}Restart Claude Code or run /plugin install north-starr-genai to pick up the new version.${NC}"
-  echo -e "  ${DIM}Then run /sync in your project to update managed sections and agents.${NC}"
+  echo -e "  ${DIM}Then run /genai-sync in your project to update managed sections and agents.${NC}"
   echo ""
 }
 

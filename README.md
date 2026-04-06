@@ -1,6 +1,6 @@
 # North Starr GenAI
 
-**Your North Starr for AI Development** | v0.13.0
+**Your North Starr for AI Development** | v0.14.0
 
 An agentic AI development agency framework — North Starr plans, designs, validates, and orchestrates while Claude Code writes code in YOUR codebase. Works with any project: RAG pipelines, agent harnesses, multi-agent systems, prompt chains, or AI platform components.
 
@@ -251,7 +251,7 @@ rm AGENTS.md
 | Skill | Purpose |
 |-------|---------|
 | `/learn` | Capture learnings (extended with 7 AI-specific triggers) |
-| `/sync` | Inject managed sections after plugin update |
+| `/genai-sync` | Inject managed sections after plugin update |
 | `/generate-commit` | Generate commit messages from staged changes |
 | `/generate-pr` | Generate PR descriptions from branch diffs |
 | `/analyze-code` | Find refactoring opportunities and code smells |
