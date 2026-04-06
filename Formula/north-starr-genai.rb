@@ -2,7 +2,7 @@ class NorthStarrGenai < Formula
   desc "Your Development Partner — AI-specific workflow for AI coding tools"
   homepage "https://github.com/selcukyucel/north-starr-genai"
   url "https://github.com/selcukyucel/north-starr-genai/archive/refs/tags/v0.12.0.tar.gz"
-  sha256 "9f274664d24baa30adc8f564303d6fdbcde81c4d47d4805240a9e48ac0f8eac6"
+  sha256 "998e38dc984babd2112e07a00de42f7f8d7e275d0a1905ee8e169e1e8ad5d858"
   license "MIT"
 
   def install
