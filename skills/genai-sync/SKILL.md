@@ -204,7 +204,7 @@ These are the managed sections that `/genai-sync` injects. CLAUDE.md and AGENTS.
 Use this version when syncing `CLAUDE.md`:
 
 ```markdown
-<!-- [NORTH-STARR-GENAI:how-to-approach-tasks v2.0] -->
+<!-- [NORTH-STARR-GENAI:how-to-approach-tasks v3.0] -->
 ## How to Approach Tasks
 
 Before ANY code change, print this assessment:
@@ -217,18 +217,47 @@ Before ANY code change, print this assessment:
 | Q3 | Does this affect a client-facing output? | Yes / No |
 | Q4 | Could this change cost at scale? (new model, more tokens, removed caching) | Yes / No |
 
-**Gate Rules:**
-- **Fast-path**: Q0 = Yes, all others No → state the file and proceed. No table needed.
-- Q0 = No → Write evals for current behavior FIRST (BASELINE phase)
-- Q1 or Q2 = Yes → Run `/ai-invert` automatically. Once the inversion analysis is ready, ask "Proceed with layout plan?" before spawning the `genai-layoutplan` agent. Do not proceed without approval.
-- Q3 = Yes → Run `/baseline` before any change
-- Q4 = Yes → Run `/cost-estimate` before proceeding
-- Two or more of Q1-Q4 = Yes → Spawn `genai-layoutplan` agent for structured planning
-- All Low → State files and wait for confirmation
+**Gate Rules (MANDATORY — not advisory):**
+- **Fast-path**: Q0 = Yes, all others No → state the file and proceed. Declare "FAST-PATH" when the routing hook asks.
+- Q0 = No → MUST invoke `baseline-capturer` agent (via `/baseline`) to capture current behavior FIRST.
+- Q1 or Q2 = Yes → MUST invoke `ai-invert-analyst` agent (via `/ai-invert`). The PreToolUse hook surfaces a reminder when Write/Edit targets `.plans/PROMPTS-*`, `.plans/RAG-*`, `.plans/EVAL-*`, or `.plans/GUARDRAILS-*` — route to the specialist instead of writing directly. Once inversion is ready, ask "Proceed with layout plan?" before spawning `genai-layoutplan`. Do not proceed without approval.
+- Q3 = Yes → MUST invoke `baseline-capturer` agent (via `/baseline`) before any change.
+- Q4 = Yes → MUST invoke `cost-estimator` agent (via `/cost-estimate`) before proceeding.
+- Two or more of Q1–Q4 = Yes → Spawn `genai-layoutplan` agent for structured planning.
+- All Low → State files and wait for confirmation.
+
+## Delegation Policy (MUST)
+
+When the task touches one of these domains, you MUST invoke the matching specialist agent via the Agent tool (`subagent_type: "north-starr-genai:<name>"`) on a separate thread, cite its output path in your response's `Cross-Consult Log`, and NOT write to its owned `.plans/` directory directly:
+
+| Domain | Specialist Agent | Owned `.plans/` paths |
+|---|---|---|
+| Prompt design, few-shot, CoT, system messages | `prompt-engineer` | `PROMPTS-*/` |
+| Eval design, golden sets, rubrics, regression tests | `eval-designer` | `EVAL-*/` |
+| Baseline capture (pre-change snapshot) | `baseline-capturer` | `BASELINE-*.md` |
+| RAG, retrieval, embedding, chunking, re-rank | `rag-advisor` | `RAG-*.md` |
+| Guardrails, injection defense, PII, content filter, compliance | `guardrails-designer` | `GUARDRAILS-*.md`, `GUARDRAILS-REPORT-*.md` |
+| Red-teaming, adversarial prompts | `prompt-adversary` | `ADVERSARY-*.md` |
+| Cost estimation, token budget, model-tier routing | `cost-estimator` | `COST-*.md` |
+| Architecture, model selection, ADRs, topology | `ai-architect` | `ADR-*.md` |
+| Monitoring, observability, telemetry, drift, SLA, alerts | `ai-ops` | `OPS-*.md` |
+| External APIs, credentials, webhooks, auth, retry strategy | `integration-planner` | `INTEGRATION-*.md` |
+| Risk analysis, inversion, failure modes | `ai-invert-analyst` | `INVERT-*.md` |
+| UI/UX for AI interfaces | `agentic-designer` | `UI-*.md` |
+| Implementation plan from inversion | `genai-layoutplan` | `PLAN-*.md` |
+| Story decomposition (PRD → stories) | `genai-storymap` or `chief-ai-po` | `STORIES-*.md`, `STORIES-AI-*.md` |
+| Story refinement (TRIAGE mode) | `chief-ai-po` | `REFINED-*.md` |
+
+**Exceptions — when delegation is NOT required:**
+- True fast-path changes (config, docs, typo, trivial one-line fix) — declare "FAST-PATH" in your response.
+- The user explicitly says "handle it yourself" or "no agents" — follow the user.
+- You are the specialist agent writing your own output file.
+
+**Peer consultation is mandatory inside specialist threads:** Every specialist report ends with a `## Cross-Consult Log` section citing peer agents consulted. Missing log → orchestrator flags the report incomplete at HARDEN → DELIVER and routes back for rework. See each specialist's `## Required Peer Consultations` section for the specific MUST-cite list.
 
 **Workflow — 5 phases executed in order:**
 
-**1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `genai-layoutplan` for complex tasks.
+**1. ASSESS** — Run the gate above. Capture baseline if needed (via `baseline-capturer`). Run `/ai-invert` (dispatches `ai-invert-analyst`) → `genai-layoutplan` for complex tasks.
 
 **2. BUILD** — Implement the plan. Spawn specialist agents based on what the plan involves:
 - Plan includes prompt design or prompt changes → spawn `prompt-engineer` agent (designs/versions prompts, writes to `.plans/PROMPTS-<name>/`)
@@ -240,9 +269,10 @@ Before ANY code change, print this assessment:
 **3. HARDEN** — After code is working, validate automatically:
 - Spawn `eval-designer` agent — runs the eval suite (`.plans/EVAL-<name>/`), scores outputs against rubric, compares to baseline. If no eval suite exists, it creates one from the acceptance criteria.
 - Spawn `guardrails-designer` agent — tests input/output guardrails, PII filtering, prompt injection defenses, audit logging.
-- **Both must pass** to proceed. If either fails:
+- **Both must pass AND both must have populated Cross-Consult Logs** to proceed. If any of these fail:
   - Eval failure → review the failing criteria, fix the prompt or code, re-run eval
   - Guardrail failure → fix the gap, re-run validation
+  - Missing Cross-Consult Log → route back to the specialist with feedback "cite the peers in your Required Peer Consultations section"
   - If the same validation fails twice → stop and ask the user for guidance
 
 **4. COMPLETE** — Present a summary listing files modified, eval scores, guardrail status. Ask the user: "What would you like to do next?" with options: Generate commit message, Generate PR description, Run /learn (capture learnings), or Done. Do not run any of these automatically — wait for the user's choice.
@@ -262,7 +292,7 @@ Always check `.plans/` for active plans before starting new work.
 Use this version when syncing `AGENTS.md`:
 
 ```markdown
-<!-- [NORTH-STARR-GENAI:how-to-approach-tasks v2.0] -->
+<!-- [NORTH-STARR-GENAI:how-to-approach-tasks v3.0] -->
 ## How to Approach Tasks
 
 Before ANY code change, print this assessment:
@@ -275,18 +305,47 @@ Before ANY code change, print this assessment:
 | Q3 | Does this affect a client-facing output? | Yes / No |
 | Q4 | Could this change cost at scale? (new model, more tokens, removed caching) | Yes / No |
 
-**Gate Rules:**
-- **Fast-path**: Q0 = Yes, all others No → state the file and proceed. No table needed.
-- Q0 = No → Write evals for current behavior FIRST (BASELINE phase)
-- Q1 or Q2 = Yes → Run `/ai-invert` automatically. Once the inversion analysis is ready, use `vscode_askQuestions` to ask "Proceed with layout plan?" (options: "Yes, run genai-layoutplan", "No, let me review first"). Once the plan is ready, use `vscode_askQuestions` again to ask "Plan is ready. Start implementation?" (options: "Yes, start coding", "No, I want to adjust the plan"). Do not proceed without approval at each gate.
-- Q3 = Yes → Run `/baseline` before any change
-- Q4 = Yes → Run `/cost-estimate` before proceeding
-- Two or more of Q1-Q4 = Yes → Spawn `genai-layoutplan` agent for structured planning
-- All Low → State files and wait for confirmation
+**Gate Rules (MANDATORY — not advisory):**
+- **Fast-path**: Q0 = Yes, all others No → state the file and proceed. Declare "FAST-PATH" when the routing hook asks.
+- Q0 = No → MUST invoke `baseline-capturer` agent (via `/baseline`) to capture current behavior FIRST.
+- Q1 or Q2 = Yes → MUST invoke `ai-invert-analyst` agent (via `/ai-invert`). The PreToolUse hook surfaces a reminder when Write/Edit targets `.plans/PROMPTS-*`, `.plans/RAG-*`, `.plans/EVAL-*`, or `.plans/GUARDRAILS-*` — route to the specialist instead of writing directly. Once inversion is ready, use `vscode_askQuestions` to ask "Proceed with layout plan?" (options: "Yes, run genai-layoutplan", "No, let me review first"). Once the plan is ready, ask again with `vscode_askQuestions`: "Plan is ready. Start implementation?" (options: "Yes, start coding", "No, I want to adjust the plan"). Do not proceed without approval at each gate.
+- Q3 = Yes → MUST invoke `baseline-capturer` agent (via `/baseline`) before any change.
+- Q4 = Yes → MUST invoke `cost-estimator` agent (via `/cost-estimate`) before proceeding.
+- Two or more of Q1–Q4 = Yes → Spawn `genai-layoutplan` agent for structured planning.
+- All Low → State files and wait for confirmation.
+
+## Delegation Policy (MUST)
+
+When the task touches one of these domains, you MUST invoke the matching specialist agent via the Agent tool (`subagent_type: "north-starr-genai:<name>"`) on a separate thread, cite its output path in your response's `Cross-Consult Log`, and NOT write to its owned `.plans/` directory directly:
+
+| Domain | Specialist Agent | Owned `.plans/` paths |
+|---|---|---|
+| Prompt design, few-shot, CoT, system messages | `prompt-engineer` | `PROMPTS-*/` |
+| Eval design, golden sets, rubrics, regression tests | `eval-designer` | `EVAL-*/` |
+| Baseline capture (pre-change snapshot) | `baseline-capturer` | `BASELINE-*.md` |
+| RAG, retrieval, embedding, chunking, re-rank | `rag-advisor` | `RAG-*.md` |
+| Guardrails, injection defense, PII, content filter, compliance | `guardrails-designer` | `GUARDRAILS-*.md`, `GUARDRAILS-REPORT-*.md` |
+| Red-teaming, adversarial prompts | `prompt-adversary` | `ADVERSARY-*.md` |
+| Cost estimation, token budget, model-tier routing | `cost-estimator` | `COST-*.md` |
+| Architecture, model selection, ADRs, topology | `ai-architect` | `ADR-*.md` |
+| Monitoring, observability, telemetry, drift, SLA, alerts | `ai-ops` | `OPS-*.md` |
+| External APIs, credentials, webhooks, auth, retry strategy | `integration-planner` | `INTEGRATION-*.md` |
+| Risk analysis, inversion, failure modes | `ai-invert-analyst` | `INVERT-*.md` |
+| UI/UX for AI interfaces | `agentic-designer` | `UI-*.md` |
+| Implementation plan from inversion | `genai-layoutplan` | `PLAN-*.md` |
+| Story decomposition (PRD → stories) | `genai-storymap` or `chief-ai-po` | `STORIES-*.md`, `STORIES-AI-*.md` |
+| Story refinement (TRIAGE mode) | `chief-ai-po` | `REFINED-*.md` |
+
+**Exceptions — when delegation is NOT required:**
+- True fast-path changes (config, docs, typo, trivial one-line fix) — declare "FAST-PATH" in your response.
+- The user explicitly says "handle it yourself" or "no agents" — follow the user.
+- You are the specialist agent writing your own output file.
+
+**Peer consultation is mandatory inside specialist threads:** Every specialist report ends with a `## Cross-Consult Log` section citing peer agents consulted. Missing log → orchestrator flags the report incomplete at HARDEN → DELIVER and routes back for rework. See each specialist's `## Required Peer Consultations` section for the specific MUST-cite list.
 
 **Workflow — 5 phases executed in order:**
 
-**1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `genai-layoutplan` for complex tasks.
+**1. ASSESS** — Run the gate above. Capture baseline if needed (via `baseline-capturer`). Run `/ai-invert` (dispatches `ai-invert-analyst`) → `genai-layoutplan` for complex tasks.
 
 **2. BUILD** — Implement the plan. Spawn specialist agents based on what the plan involves:
 - Plan includes prompt design or prompt changes → spawn `prompt-engineer` agent (designs/versions prompts, writes to `.plans/PROMPTS-<name>/`)
@@ -298,9 +357,10 @@ Before ANY code change, print this assessment:
 **3. HARDEN** — After code is working, validate automatically:
 - Spawn `eval-designer` agent — runs the eval suite (`.plans/EVAL-<name>/`), scores outputs against rubric, compares to baseline. If no eval suite exists, it creates one from the acceptance criteria.
 - Spawn `guardrails-designer` agent — tests input/output guardrails, PII filtering, prompt injection defenses, audit logging.
-- **Both must pass** to proceed. If either fails:
+- **Both must pass AND both must have populated Cross-Consult Logs** to proceed. If any of these fail:
   - Eval failure → review the failing criteria, fix the prompt or code, re-run eval
   - Guardrail failure → fix the gap, re-run validation
+  - Missing Cross-Consult Log → route back to the specialist with feedback "cite the peers in your Required Peer Consultations section"
   - If the same validation fails twice → stop and ask the user for guidance
 
 **4. COMPLETE** — Present a summary listing files modified, eval scores, guardrail status. Use `vscode_askQuestions` to prompt the developer with options: "Generate commit message", "Generate PR description", "Run /learn (capture learnings)", "Done". Do not run any of these automatically — wait for the developer's choice. If the developer chooses "Generate commit message", generate it, then use `vscode_askQuestions` again with options: "Generate PR description", "Run /learn (capture learnings)", "Done".

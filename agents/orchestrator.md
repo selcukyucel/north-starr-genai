@@ -101,11 +101,13 @@ BUILD (partial) → HUMAN:
 
 HARDEN → DELIVER:
   condition: ALL three gates pass (eval-designer, guardrails-designer, ai-ops)
+             AND every specialist artifact produced during BUILD has a `## Cross-Consult Log` section with citations from its Required Peer Consultations list (see each specialist's agent definition)
   action: dispatch to demo-builder
 
 HARDEN → REWORK:
   condition: any gate fails (first failure on this issue)
-  action: route to specific upstream agent based on failure type (see Feedback Routing)
+             OR any specialist artifact is missing its Cross-Consult Log
+  action: route to specific upstream agent based on failure type (see Feedback Routing). For a missing Cross-Consult Log, route back to the specialist that produced the artifact with feedback: "Cross-Consult Log is missing or incomplete — cite the peer agents listed in your Required Peer Consultations section before resubmitting."
 
 HARDEN → HUMAN:
   condition: same gate fails twice after rework on the same issue
@@ -369,6 +371,7 @@ Check SLAs on every transition and on periodic ticks. These are the default thre
 | HUMAN (client) | 48 hours | "Client hasn't responded — follow up or make default choice?" |
 | BLOCKED | 24 hours | "Story blocked for 24h — consider reprioritizing or unblocking" |
 | REWORK | Same as original phase | Second rework on same issue escalates to human |
+| Peer-consult response | 1 hour during active pipeline | If a specialist requests a cross-consult from another specialist (e.g., cost-estimator requests infrastructure cost input from ai-ops) and no response arrives within 1h, dispatch the consulted agent on a separate thread with the consultation request as its input. Do not let consultation wait block the requesting specialist for longer than 1h. |
 
 **On SLA breach:**
 1. Add a warning to `.plans/PIPELINE-STATUS.md` in the "NEEDS YOUR ATTENTION" section
@@ -550,15 +553,17 @@ See `.plans/DECISIONS.md` for full decision log.
 
 1. **Every transition updates PIPELINE-STATUS.md** — no exceptions, even for minor state changes
 2. **Never skip a gate** — all three HARDEN validators must report before proceeding
-3. **Never auto-resolve budget conflicts** — always escalate budget overcommit to a human
-4. **Never auto-override a human gate** — if a story is AWAITING CLIENT, only a human response or SLA breach moves it
-5. **Decisions are global** — a decision made for one story constrains all others unless a human overrides
-6. **Budget is a pool** — check remaining budget before any new allocation, not just the story's own allocation
-7. **Two rework cycles max** — if the same gate fails twice after rework, escalate; do not loop indefinitely
-8. **Parallel dispatch where possible** — BUILD specialists and HARDEN validators run concurrently
-9. **Sequential where required** — chief-ai-po before ai-architect before genai-layoutplan; each needs the prior output
-10. **Serialize parallel writes** — two stories cannot modify the same files concurrently
-11. **Archive on cancel** — never delete artifacts; move them to `.plans/archive/`
-12. **Client payloads are jargon-free** — rewrite technical details into business language
-13. **Always have an opinion** — every escalation payload must include a recommendation
-14. **Feedback loops affect siblings** — when a story revision flags cross-story impact, pause and re-check affected siblings
+3. **Cross-Consult Log is a gate** — every specialist artifact must end with a populated `## Cross-Consult Log` citing its Required Peer Consultations. A missing log blocks HARDEN → DELIVER and triggers REWORK back to the specialist that produced it.
+4. **Never auto-resolve budget conflicts** — always escalate budget overcommit to a human
+5. **Never auto-override a human gate** — if a story is AWAITING CLIENT, only a human response or SLA breach moves it
+6. **Decisions are global** — a decision made for one story constrains all others unless a human overrides
+7. **Budget is a pool** — check remaining budget before any new allocation, not just the story's own allocation
+8. **Two rework cycles max** — if the same gate fails twice after rework, escalate; do not loop indefinitely
+9. **Parallel dispatch where possible** — BUILD specialists and HARDEN validators run concurrently
+10. **Sequential where required** — chief-ai-po before ai-architect before genai-layoutplan; each needs the prior output
+11. **Serialize parallel writes** — two stories cannot modify the same files concurrently
+12. **Archive on cancel** — never delete artifacts; move them to `.plans/archive/`
+13. **Client payloads are jargon-free** — rewrite technical details into business language
+14. **Always have an opinion** — every escalation payload must include a recommendation
+15. **Feedback loops affect siblings** — when a story revision flags cross-story impact, pause and re-check affected siblings
+16. **Peer-consult SLA is 1h** — if a specialist is waiting on another specialist's input for longer than 1h during active pipeline, dispatch the consulted agent automatically rather than letting the requesting specialist stall.

@@ -2,6 +2,102 @@
 
 All notable changes to north-starr-genai will be documented in this file.
 
+## [0.15.0] — 2026-04-16
+
+### Overview
+
+Enforcement release. North Starr GenAI becomes fully agentic: delegation is mandatory (not advisory), specialist agents MUST cross-consult peers, and routing hooks fire automatically on every prompt and AI-artifact write. Closes the root cause of siloed specialist reports seen in `.docs/reports/` — where each agent acted in isolation and missed peer context (ai-architect skipped cost-estimator's tier routing proposal, guardrails-designer ignored cost of remediations, integration-planner filed 26 risks with no ownership, etc.).
+
+### Three New Agents
+
+- **`ai-invert-analyst`** — Promoted from the `/ai-invert` skill. Runs the 10-dimension AI risk inversion on a separate thread and produces `.plans/INVERT-<name>.md`.
+- **`baseline-capturer`** — Promoted from the `/baseline` skill. Captures reproducible performance snapshots with exact re-run commands before any change.
+- **`auto-improver`** — Promoted from the `/autoimprove` skill. Hill-climbing prompt optimization (one small change per round, keep wins, revert regressions) on a separate thread.
+
+The `/ai-invert`, `/baseline`, and `/autoimprove` skills remain as thin dispatchers that spawn the new agents — matching the existing `/decompose → genai-storymap` pattern.
+
+### Plugin-Level Routing Hooks (Claude Code)
+
+Two hooks now ship with the plugin via `.claude-plugin/plugin.json` and `${CLAUDE_PLUGIN_ROOT}/hooks/`:
+
+- **`UserPromptSubmit` hook** — Scans every prompt for AI keywords (prompt, eval, RAG, guardrail, cost, model, injection, drift, observability, integration, adversarial, etc.). When matched, injects a Routing Directive naming the required specialist agents. Fast-path prompts produce no output.
+- **`PreToolUse` hook** — Fires on `Write`/`Edit`/`NotebookEdit` targeting specialist-owned `.plans/` paths (`PROMPTS-*`, `RAG-*`, `EVAL-*`, `COST-*`, `ADR-*`, `GUARDRAILS-*`, `INTEGRATION-*`, `OPS-*`, `INVERT-*`, `BASELINE-*`, etc.). Injects a reminder to delegate to the owning specialist.
+
+Hooks auto-register on plugin install. VS Code Copilot has no hook equivalent — the same policy travels via the managed `Delegation Policy` section in `AGENTS.md`.
+
+### Delegation Policy (MANDATORY — managed section v3.0)
+
+The `How to Approach Tasks` managed section in `CLAUDE.md` / `AGENTS.md` is bumped to **v3.0**:
+
+- Q0–Q4 gates are now MUST, not advisory.
+- New `## Delegation Policy (MUST)` table maps 14 AI domains → specialist agents → owned `.plans/` paths.
+- The main conversation MUST invoke the specialist via the Agent tool, cite its output path in a `Cross-Consult Log`, and NOT write to its owned `.plans/` directory directly.
+- Existing exceptions preserved: true fast-path, user says "handle it yourself", specialist writing its own file.
+
+### Cross-Consultation (MANDATORY)
+
+Every specialist agent now has `## Required Peer Consultations (MUST)` and a `## Cross-Consult Log` section in its output template:
+
+- `ai-architect` — cite `cost-estimator` (tier proposal — accept or reject explicitly), `eval-designer` (baseline), `ai-invert-analyst` (risks)
+- `cost-estimator` — MUST emit a Model-Tier Routing Proposal; cross-consult `ai-ops`, `integration-planner`
+- `prompt-engineer` — cite `guardrails-designer` (injection), `eval-designer` (baseline/Eval Handoff), `rag-advisor` (Context Injection Contract)
+- `eval-designer` — cite `baseline-capturer`, `prompt-engineer` (Eval Handoff), `guardrails-designer`
+- `guardrails-designer` — cite `cost-estimator` (remediation cost impact), `prompt-adversary`, `ai-ops` (audit logging)
+- `ai-ops` — cite `integration-planner` (health checks), `cost-estimator` (observability cost), `guardrails-designer` (audit fields), `eval-designer` (drift baseline)
+- `integration-planner` — MUST emit Ownership Assignment table; cross-consult `guardrails-designer`, `ai-ops`, `cost-estimator`
+- `prompt-adversary` — MUST tag findings `[PROMPT-LEVEL]` / `[SYSTEM-LEVEL]` / `[GUARDRAIL-LEVEL]`; cross-consult `guardrails-designer`, `ai-architect`
+
+Missing Cross-Consult Log → orchestrator routes back for rework at HARDEN → DELIVER.
+
+### Orchestrator Updates
+
+- HARDEN → DELIVER now requires a populated Cross-Consult Log on every BUILD artifact.
+- HARDEN → REWORK fires on missing log (routes back to the producing specialist).
+- New **peer-consult 1h SLA**: if a specialist waits on another specialist's input for longer than 1h, orchestrator auto-dispatches the consulted agent rather than stalling the requester.
+
+### Migration
+
+**Breaking changes:** None. Existing agent input/output contracts are preserved; new sections are additive. The fast-path exception is preserved for trivial changes.
+
+**Claude Code plugin users (Option A):**
+
+```
+/plugin marketplace update selcukyucel/north-starr-genai
+/plugin install north-starr-genai
+north-starr-genai cache-update
+# restart Claude Code
+# then, in each existing project:
+/genai-sync         # updates CLAUDE.md managed section v2.0 → v3.0
+```
+
+The marketplace version bump triggers cache refresh; plugin reinstall picks up the 3 new agents, the 8 updated specialists, and the new hooks (which auto-register). `/genai-sync` detects the v2.0 → v3.0 version tag in the managed section and replaces it with the new Delegation Policy content.
+
+**Homebrew + VS Code Copilot users (Option B + C):**
+
+```bash
+brew update && brew upgrade north-starr-genai
+cd <your-project>
+north-starr-genai update
+```
+
+`north-starr-genai update` copies the 3 new agent files into `.github/agents/` (via glob), replays the 8 updated specialists, and re-injects the v3.0 managed section into `AGENTS.md`.
+
+**New users:** `/plugin install north-starr-genai` (Option A) or `brew install` + `north-starr-genai init` (Option B+C) provisions the full v3.0 setup on first use.
+
+### Files Changed
+
+- 3 new agents (`agents/`) + 3 new Claude templates + 3 new Copilot templates
+- 8 modified specialist agents + 8 modified Claude templates + 8 modified Copilot templates
+- 1 modified orchestrator (cross-consult precondition + 1h peer-consult SLA + 16th rule)
+- 2 new hook scripts (`hooks/`)
+- 1 new plugin manifest (`.claude-plugin/plugin.json`) registering hooks with `${CLAUDE_PLUGIN_ROOT}`
+- 1 new dev-only `.claude/settings.json` (permissions for this repo's own Claude Code sessions)
+- 3 thin-dispatcher skills (`ai-invert`, `baseline`, `autoimprove`)
+- 2 modified canonical sources (`skills/genai-sync/SKILL.md` both variants v2.0 → v3.0, `skills/genai-bootstrap/SKILL.md` new Analysis agents category)
+- 2 modified top-level templates (`templates/CLAUDE.md`, `templates/AGENTS.md` → v3.0)
+
+---
+
 ## [0.14.0] — 2026-04-06
 
 ### Overview

@@ -19,6 +19,8 @@ You will be given a prompt file, pipeline configuration, or automation descripti
 3. **Execute attacks** — document each vector, expected defense, actual result, classify as BLOCKED/PARTIAL/BYPASSED
 4. **Score severity** — CRITICAL/HIGH/MEDIUM/LOW for each successful bypass
 5. **Write report** — `.plans/ADVERSARY-<name>.md` with full attack results and defense coverage
+6. **Required output MUST — Layer tags**: every finding tagged `[PROMPT-LEVEL]` (prompt-engineer fixes), `[SYSTEM-LEVEL]` (ai-architect fixes: new pipeline stage, validator, middleware), or `[GUARDRAIL-LEVEL]` (guardrails-designer fixes). Multiple tags allowed, primary owner first.
+7. **Cross-consult MUST**: cite `guardrails-designer` (consume GUARDRAILS spec to know existing defenses), `ai-architect` (for every `[SYSTEM-LEVEL]` finding include a routing line: "requires architectural change — routing to ai-architect"). Report ends with `## Findings by Layer Tag` summary table + `## Cross-Consult Log`.
 
 ## Important
 

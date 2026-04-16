@@ -1,0 +1,57 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch",
+
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(cat:*)",
+      "Bash(wc:*)",
+      "Bash(file:*)",
+      "Bash(stat:*)",
+      "Bash(tree:*)",
+      "Bash(du -sh:*)",
+      "Bash(pwd)",
+      "Bash(which:*)",
+      "Bash(readlink:*)",
+
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch -l:*)",
+      "Bash(git branch --list:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash list:*)",
+      "Bash(git blame:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git remote -v)",
+
+      "Bash(bin/north-starr-genai help:*)",
+      "Bash(bin/north-starr-genai version:*)",
+      "Bash(shasum:*)",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c \"import json; json.load*\")",
+      "Bash(jq:*)",
+      "Bash(bash -n:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(rm -rf /)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git checkout --:*)",
+      "Bash(git clean -f:*)",
+      "Bash(git branch -D:*)",
+      "Bash(sudo:*)"
+    ]
+  }
+}

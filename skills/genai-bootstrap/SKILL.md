@@ -393,6 +393,11 @@ Core agents (always install):
 - `genai-storymap` — spawned by `/decompose` for PRD decomposition
 - `chief-ai-po` — spawned by `/decompose` for AI-specific story decomposition (3 modes: decompose, refine, incorporate-feedback)
 
+Analysis agents (install for AI projects):
+- `ai-invert-analyst` — spawned by `/ai-invert` skill for AI-specific risk analysis (Q1/Q2 gate)
+- `baseline-capturer` — spawned by `/baseline` skill for pre-change performance snapshot (Q3 gate)
+- `auto-improver` — spawned by `/autoimprove` skill for hill-climbing prompt optimization
+
 Build specialists (install for AI projects):
 - `prompt-engineer` — spawned during BUILD phase for prompt design and versioning
 - `rag-advisor` — spawned during BUILD phase for RAG pipeline design
@@ -414,7 +419,7 @@ Delivery agents (install for AI projects):
 
 **VS Code Copilot** — copy each agent from `templates/github/agents/*.agent.md` to `.github/agents/*.agent.md`.
 
-**Why all agents are installed:** The workflow in CLAUDE.md/AGENTS.md (v2.0) automatically spawns specialist and validation agents during BUILD and HARDEN phases. If these agents aren't installed in the project, the workflow breaks. Installing them during bootstrap ensures the full pipeline works from the first task.
+**Why all agents are installed:** The workflow in CLAUDE.md/AGENTS.md (v3.0) automatically spawns specialist and validation agents during the gate (Q1/Q2/Q3/Q4) and BUILD/HARDEN phases. Every specialist has MUST-cite peer consultations — if an agent isn't installed in the project, the cross-consult chain breaks. Installing all agents during bootstrap ensures the full pipeline works from the first task.
 
 Generate additional project-specific agents only if the project clearly warrants them (e.g., an explorer agent for very large codebases).
 
@@ -428,6 +433,7 @@ Generate additional project-specific agents only if the project clearly warrants
 - [ ] Landmine rules in the current tool's format — aim for 5-15 depending on project maturity
 - [ ] `_TEMPLATE.md` in the rules directory — must include ALL sections from reference templates
 - [ ] Core agents: `genai-layoutplan`, `genai-storymap`, `chief-ai-po`
+- [ ] Analysis agents: `ai-invert-analyst`, `baseline-capturer`, `auto-improver`
 - [ ] Build specialists: `prompt-engineer`, `rag-advisor`, `integration-planner`
 - [ ] Validation agents: `eval-designer`, `guardrails-designer`, `prompt-adversary`, `ai-ops`
 - [ ] Orchestration agents: `orchestrator`, `ai-architect`, `cost-estimator`

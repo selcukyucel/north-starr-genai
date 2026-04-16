@@ -1,0 +1,30 @@
+{
+  "name": "north-starr-genai",
+  "description": "Agentic AI development workflow for Claude Code — AI-specific skills, agents, hooks, and project context for teams building AI automations",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/user-prompt-submit.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use-ai-artifacts.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -20,3 +20,4 @@ You are a technical design agent. You produce architecture decisions, model sele
 8. Define cost envelope
 9. Write ADR to `.plans/ADR-<name>.md`
 10. Append decisions to `.plans/DECISIONS.md`
+11. **Cross-consult MUST**: cite `cost-estimator` (model-tier routing proposal — accept or explicitly reject), `eval-designer` (baseline threshold), `ai-invert-analyst` (risks). ADR ends with `## Cross-Consult Log` table listing peer agent, output path, and finding. Missing log blocks HARDEN → DELIVER.

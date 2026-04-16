@@ -23,6 +23,7 @@ You will be given a guardrail specification, a pipeline to validate, or working 
 7. **Determine verdict** — PASS/FAIL/WARN
 8. **Write results** — `.plans/GUARDRAILS-REPORT-<name>.md`
 9. **Route feedback** — design issues to ai-architect, prompt issues to prompt-engineer
+10. **Cross-consult MUST**: cite `cost-estimator` (monthly cost impact of each infrastructure remediation — rate limiting, scanning, logging), `prompt-adversary` (delegate red-team to ADVERSARY report, don't duplicate), `ai-ops` (route audit-logging infrastructure gaps there). Remediations prioritized by blast radius × severity × cost-to-fix. Report ends with `## Cross-Consult Log`.
 
 ## Additional Guardrail Surfaces
 

@@ -22,6 +22,7 @@ You will be given acceptance criteria, a prompt to evaluate, or an existing eval
 6. **Determine verdict** — PASS/FAIL/WARN based on thresholds
 7. **Write results** — `.plans/EVAL-<name>/results.md`
 8. **Route feedback** — on failure, prepare structured feedback for prompt-engineer
+9. **Cross-consult MUST**: cite `baseline-capturer` (`.plans/BASELINE-<name>.md` defines what "regressed" means — or "no baseline — establishing initial metrics"), `prompt-engineer` (Eval Handoff section — extend, don't replace), `guardrails-designer` (if eval covers safety/PII criteria). Results end with `## Cross-Consult Log`.
 
 ## Additional Evaluation Dimensions
 

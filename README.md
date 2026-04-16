@@ -1,6 +1,6 @@
 # North Starr GenAI
 
-**Your North Starr for AI Development** | v0.14.0
+**Your North Starr for AI Development** | v0.15.0
 
 An agentic AI development agency framework — North Starr plans, designs, validates, and orchestrates while Claude Code writes code in YOUR codebase. Works with any project: RAG pipelines, agent harnesses, multi-agent systems, prompt chains, or AI platform components.
 
@@ -113,9 +113,41 @@ Before ANY code change, the gate catches AI-specific risks:
 
 Based on answers, it routes through: **ASSESS** → **BUILD** (specialists auto-spawn) → **HARDEN** (validators auto-run) → **COMPLETE** → **LEARN**.
 
+### Routing Hooks (Claude Code only)
+
+The plugin ships two hooks that fire automatically:
+
+- **UserPromptSubmit hook** — Scans every prompt for AI keywords (prompt, eval, RAG, guardrail, cost, model, injection, drift, observability, integration, etc.). On match, injects a Routing Directive naming the required specialist agents. Fast-path prompts (config change, typo, docs, trivial one-line fix) produce no output.
+- **PreToolUse hook** — Fires on `Write`/`Edit`/`NotebookEdit` targeting specialist-owned `.plans/` paths (`PROMPTS-*`, `RAG-*`, `EVAL-*`, `COST-*`, `ADR-*`, `GUARDRAILS-*`, `INTEGRATION-*`, `OPS-*`, `INVERT-*`, `BASELINE-*`, etc.). Injects a reminder that the path is owned by a specialist — the main conversation should delegate via the Agent tool, not write directly.
+
+Hooks auto-register when `/plugin install north-starr-genai` runs. VS Code Copilot has no equivalent hook mechanism; the same policy travels via the managed `Delegation Policy` section in `AGENTS.md`.
+
+### Delegation Policy (MUST)
+
+Every AI-touching domain has an owner:
+
+| Domain | Specialist Agent |
+|---|---|
+| Prompt design, CoT, few-shot | `prompt-engineer` |
+| Evals, rubrics, regression tests | `eval-designer` |
+| Baseline capture | `baseline-capturer` |
+| RAG, retrieval, embeddings | `rag-advisor` |
+| Guardrails, injection, PII, compliance | `guardrails-designer` |
+| Red-teaming, adversarial prompts | `prompt-adversary` |
+| Cost, token budget, tier routing | `cost-estimator` |
+| Architecture, model selection, ADRs | `ai-architect` |
+| Monitoring, drift, SLA, alerts | `ai-ops` |
+| External APIs, auth, retry | `integration-planner` |
+| Inversion, failure modes | `ai-invert-analyst` |
+| UI/UX for AI interfaces | `agentic-designer` |
+| Planning from inversion | `genai-layoutplan` |
+| PRD → stories | `genai-storymap` / `chief-ai-po` |
+
+The main conversation MUST delegate to the specialist — invoke via the Agent tool, cite its output path in a `Cross-Consult Log`, and never write to its owned `.plans/` directory directly. Every specialist report MUST end with a populated `## Cross-Consult Log` citing peer agents consulted; the orchestrator flags reports with a missing log as incomplete at HARDEN → DELIVER.
+
 ## Installation
 
-> **Which option?** Use **Option A** if you work in Claude Code — all 23 skills and 15 agents load directly into your session, no file generation needed. Use **Option B + C** if you work in VS Code with GitHub Copilot — the CLI generates project files that Copilot reads.
+> **Which option?** Use **Option A** if you work in Claude Code — all 24 skills, 18 agents, and 2 routing hooks load directly into your session, no file generation needed. Use **Option B + C** if you work in VS Code with GitHub Copilot — the CLI generates project files that Copilot reads. (Hooks are a Claude Code–only feature; Copilot users get the same routing policy via the managed section in AGENTS.md.)
 
 ### Option A: Claude Code Plugin (recommended)
 
@@ -124,7 +156,7 @@ Based on answers, it routes through: **ASSESS** → **BUILD** (specialists auto-
 /plugin install north-starr-genai
 ```
 
-This immediately makes all 24 skills (e.g. `/assess`, `/decompose`, `/orchestrate`) and 15 agents available in your Claude Code session. No files are added to your project — the plugin lives in `~/.claude/plugins/`.
+This immediately makes all 24 skills (e.g. `/assess`, `/decompose`, `/orchestrate`), 18 agents, and 2 routing hooks available in your Claude Code session. No files are added to your project — the plugin lives in `~/.claude/plugins/`. The hooks fire automatically on every prompt and every AI-artifact write, enforcing specialist delegation.
 
 Then run `/genai-bootstrap` in your project to generate a `CLAUDE.md` with your codebase's tech stack, architecture, and module map. This lets North Starr tailor its output to your specific project.
 
@@ -133,7 +165,7 @@ Then run `/genai-bootstrap` in your project to generate a `CLAUDE.md` with your 
 /plugin marketplace update selcukyucel/north-starr-genai
 /plugin install north-starr-genai
 ```
-After updating, run `north-starr-genai cache-update` if skills don't reflect the latest version.
+After updating, run `north-starr-genai cache-update` if skills don't reflect the latest version, restart Claude Code, and run `/genai-sync` in your existing projects to refresh the managed sections in `CLAUDE.md` and `AGENTS.md`.
 
 **Uninstall:**
 ```
@@ -258,7 +290,7 @@ rm AGENTS.md
 | `/report-weekly` | Generate weekly commit reports |
 | `/autoimprove` | Autonomously optimize skill prompts via measure-change-test loop |
 
-## Agents (15)
+## Agents (18)
 
 ### Planning & Decomposition
 | Agent | Purpose |
@@ -266,6 +298,13 @@ rm AGENTS.md
 | `chief-ai-po` | AI product owner — 3 modes: decompose (PRD → stories with inverted failure modes + 6 mandatory safety stories), refine (TRIAGE enrichment with threshold heuristics), incorporate-feedback (targeted revision from eval failures) |
 | `genai-layoutplan` | Implementation plans from inversion analysis — self-contained task descriptions, specialist tags with domain-specific input, risk-to-task verification |
 | `genai-storymap` | Decompose PRDs into prioritized user stories |
+
+### Analysis (new in v0.15.0)
+| Agent | Purpose |
+|-------|---------|
+| `ai-invert-analyst` | AI risk inversion — 10 dimensions, adversarial examples tailored to the target, NEW/PRE-EXISTING/AMPLIFIED classification. Spawned by `/ai-invert` on Q1/Q2 gate hits. |
+| `baseline-capturer` | Reproducible performance snapshot before changes — accuracy, latency, token usage, cost, error rate, format compliance, with exact reproduction commands. Spawned by `/baseline` on Q3 gate hits. |
+| `auto-improver` | Hill-climbing prompt optimization — one small change per round, keep improvements, revert regressions. Spawned by `/autoimprove`. |
 
 ### Orchestration
 | Agent | Purpose |
