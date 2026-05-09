@@ -2,7 +2,7 @@
 
 [One-sentence project description]
 
-<!-- [NORTH-STARR-GENAI:how-to-approach-tasks v3.0] -->
+<!-- [NORTH-STARR-GENAI:how-to-approach-tasks v3.1] -->
 ## How to Approach Tasks
 
 Before ANY code change, print this assessment:
@@ -16,19 +16,19 @@ Before ANY code change, print this assessment:
 | Q4 | Could this change cost at scale? (new model, more tokens, removed caching) | Yes / No |
 
 **Gate Rules (MANDATORY — not advisory):**
-- **Fast-path**: Q0 = Yes, all others No → state the file and proceed. Declare "FAST-PATH" when the routing hook asks.
-- Q0 = No → MUST invoke `baseline-capturer` agent (via `/baseline`) to capture current behavior FIRST.
-- Q1 or Q2 = Yes → MUST invoke `ai-invert-analyst` agent (via `/ai-invert`). The PreToolUse hook surfaces a reminder when Write/Edit targets `.plans/PROMPTS-*`, `.plans/RAG-*`, `.plans/EVAL-*`, or `.plans/GUARDRAILS-*` — route to the specialist instead of writing directly. Once inversion is ready, ask "Proceed with layout plan?" before spawning `genai-layoutplan`. Do not proceed without approval.
-- Q3 = Yes → MUST invoke `baseline-capturer` agent (via `/baseline`) before any change.
-- Q4 = Yes → MUST invoke `cost-estimator` agent (via `/cost-estimate`) before proceeding.
-- Two or more of Q1–Q4 = Yes → Spawn `genai-layoutplan` agent for structured planning.
-- All Low → State files and wait for confirmation.
+- **Fast-path**: Q0 = Yes, all others No → state file + proceed. Declare "FAST-PATH" when routing hook asks.
+- Q0 = No → MUST invoke `baseline-capturer` (via `/baseline`) to capture current behavior FIRST.
+- Q1 or Q2 = Yes → MUST invoke `ai-invert-analyst` (via `/ai-invert`). PreToolUse hook surfaces reminder when Write/Edit targets `.plans/PROMPTS-*`, `.plans/RAG-*`, `.plans/EVAL-*`, `.plans/GUARDRAILS-*` — route to specialist instead of writing directly. Inversion ready → ask "Proceed with layout plan?" before spawning `genai-layoutplan`. No proceed without approval.
+- Q3 = Yes → MUST invoke `baseline-capturer` (via `/baseline`) before any change.
+- Q4 = Yes → MUST invoke `cost-estimator` (via `/cost-estimate`) before proceeding.
+- Two or more of Q1–Q4 = Yes → spawn `genai-layoutplan` for structured planning.
+- All Low → state files + wait for confirmation.
 
 ## Delegation Policy (MUST)
 
-When the task touches one of these domains, you MUST invoke the matching specialist agent via the Agent tool (`subagent_type: "north-starr-genai:<name>"`) on a separate thread, cite its output path in your response's `Cross-Consult Log`, and NOT write to its owned `.plans/` directory directly:
+Task touches one of these domains → MUST invoke matching specialist via Agent tool (`subagent_type: "north-starr-genai:<name>"`) on separate thread, cite output path in response `Cross-Consult Log`, and NOT write to specialist's owned `.plans/` directory directly:
 
-| Domain | Specialist Agent | Owned `.plans/` paths |
+| Domain | Specialist | Owned `.plans/` paths |
 |---|---|---|
 | Prompt design, few-shot, CoT, system messages | `prompt-engineer` | `PROMPTS-*/` |
 | Eval design, golden sets, rubrics, regression tests | `eval-designer` | `EVAL-*/` |
@@ -39,81 +39,96 @@ When the task touches one of these domains, you MUST invoke the matching special
 | Cost estimation, token budget, model-tier routing | `cost-estimator` | `COST-*.md` |
 | Architecture, model selection, ADRs, topology | `ai-architect` | `ADR-*.md` |
 | Monitoring, observability, telemetry, drift, SLA, alerts | `ai-ops` | `OPS-*.md` |
-| External APIs, credentials, webhooks, auth, retry strategy | `integration-planner` | `INTEGRATION-*.md` |
+| External APIs, credentials, webhooks, auth, retry | `integration-planner` | `INTEGRATION-*.md` |
 | Risk analysis, inversion, failure modes | `ai-invert-analyst` | `INVERT-*.md` |
 | UI/UX for AI interfaces | `agentic-designer` | `UI-*.md` |
 | Implementation plan from inversion | `genai-layoutplan` | `PLAN-*.md` |
 | Story decomposition (PRD → stories) | `genai-storymap` or `chief-ai-po` | `STORIES-*.md`, `STORIES-AI-*.md` |
 | Story refinement (TRIAGE mode) | `chief-ai-po` | `REFINED-*.md` |
 
-**Exceptions — when delegation is NOT required:**
-- True fast-path changes (config, docs, typo, trivial one-line fix) — declare "FAST-PATH" in your response.
-- The user explicitly says "handle it yourself" or "no agents" — follow the user.
+**Exceptions — delegation NOT required:**
+- True fast-path changes (config, docs, typo, trivial one-line fix) — declare "FAST-PATH".
+- User explicitly says "handle it yourself" / "no agents" — follow user.
 - You are the specialist agent writing your own output file.
 
-**Peer consultation is mandatory inside specialist threads:** Every specialist report ends with a `## Cross-Consult Log` section citing peer agents consulted. Missing log → orchestrator flags the report incomplete at HARDEN → DELIVER and routes back for rework. See each specialist's `## Required Peer Consultations` section for the specific MUST-cite list.
+**Peer consultation mandatory inside specialist threads:** every specialist report ends with `## Cross-Consult Log` citing peers consulted. Missing log → orchestrator flags incomplete at HARDEN → DELIVER, routes back for rework. See each specialist's `## Required Peer Consultations` for MUST-cite list.
+
+## Token Discipline (MUST — applies to every dispatch)
+
+Before dispatching ANY specialist, AND inside every specialist thread:
+
+1. **Story-slice, not whole STORIES file.** Pass `.plans/stories/<story-id>.md` slice path. Never pass `.plans/STORIES-AI-<name>.md` path to specialists. If slice missing, generate it from STORIES first (chief-ai-po + genai-storymap auto-emit slices to `.plans/stories/`).
+2. **Compress peer artifacts before Wave-2 dispatch.** Between waves (DESIGN → PLAN, PLAN → BUILD, BUILD → HARDEN), run `/caveman:compress` on each prior-wave artifact >5KB (INVERT/BASELINE/COST/RAG/ADR/PROMPTS/GUARDRAILS/INTEGRATION/OPS). Wave 2+ specialists read compressed copies. Original kept as `<file>.original.md` for audit.
+3. **Existence-gate optional reads.** Glob first; skip missing `CLAUDE.md`, `AGENTS.md`, `LEARNINGS.md`, `DECISIONS.md`. Do not pay token cost for failed reads.
+4. **Section-range Reads** for any artifact >300L. Use `Read` `offset`+`limit` to read only the section being cited.
+5. **Cap turn budget per specialist.** Each specialist agent prompt enforces its own turn budget (8–12 typical). Beyond → checkpoint and partial output, not silent over-run.
+6. **Iteration mode = latest version only.** When iterating on prompts/RAG/etc, read latest version + diff vs prior, not all historical versions.
+
+These rules cap input-token spend per agent dispatch. Skipping them = the bloat-per-story trap (1M+ tokens per wave).
 
 **Workflow — 5 phases executed in order:**
 
-**1. ASSESS** — Run the gate above. Capture baseline if needed. Run `/ai-invert` → `genai-layoutplan` for complex tasks.
+**1. ASSESS** — Run gate above. Capture baseline if needed. Run `/ai-invert` → `genai-layoutplan` for complex tasks.
 
-**2. BUILD** — Implement the plan. Check each task's `**Specialists needed:**` field and spawn the required agents:
-- `prompt-engineer` → designs/versions prompts, writes to `.plans/PROMPTS-<name>/`
-- `rag-advisor` → designs chunking, embeddings, retrieval, writes to `.plans/RAG-<name>.md`
-- `integration-planner` → maps API contracts, auth, retry strategies, writes to `.plans/INTEGRATION-<name>.md`
-- `agentic-designer` → designs AI-powered UI patterns, writes to `.plans/UI-<name>.md`
+**2. BUILD** — Implement plan. Check each task's `**Specialists needed:**` field, spawn required agents:
+- `prompt-engineer` → designs/versions prompts → `.plans/PROMPTS-<name>/`
+- `rag-advisor` → designs chunking, embeddings, retrieval → `.plans/RAG-<name>.md`
+- `integration-planner` → API contracts, auth, retry → `.plans/INTEGRATION-<name>.md`
+- `agentic-designer` → AI UI patterns → `.plans/UI-<name>.md`
 - `none` → code directly, no specialist needed
 
-**Dispatch order:** If both `rag-advisor` and `prompt-engineer` are needed, run `rag-advisor` FIRST. Wait for it to write its Context Injection Contract (format, delimiters, token budget, no-results fallback), then spawn `prompt-engineer` with instruction to read that contract. All other specialists may run in parallel.
+**Dispatch order:** Both `rag-advisor` + `prompt-engineer` needed → run `rag-advisor` FIRST. Wait for Context Injection Contract (format, delimiters, token budget, no-results fallback), then spawn `prompt-engineer` with instruction to read that contract. Other specialists run parallel.
 
-**After all specialists complete**, read their outputs and implement following this mapping:
-- prompt-engineer output (`.plans/PROMPTS-<name>/`) → implement prompt loading, model call, and output parsing
-- rag-advisor output (`.plans/RAG-<name>.md`) → implement document ingestion, embedding, retrieval pipeline, and context injection
-- integration-planner output (`.plans/INTEGRATION-<name>.md`) → implement API client with auth, retry, and fallback logic
-- agentic-designer output (`.plans/UI-<name>.md`) → implement UI components following the interaction patterns
-- If integration-planner flagged BLOCKED (missing credentials), skip those tasks and escalate — implement unblocked tasks first
+**Inter-wave compression:** before dispatching Wave 2 (e.g. `prompt-engineer`/`guardrails`/`ai-ops`), run `/caveman:compress` on each Wave 1 artifact (`INVERT-*.md`, `BASELINE-*.md`, `COST-*.md`, `RAG-*.md`, `ADR-*.md`) the new specialists will read. Skipping this re-pays full input-token cost on every Wave 2 specialist (the documented bloat trap).
+
+**After all specialists complete**, read outputs and implement per this mapping:
+- prompt-engineer output (`.plans/PROMPTS-<name>/`) → implement prompt loading, model call, output parsing
+- rag-advisor output (`.plans/RAG-<name>.md`) → implement document ingestion, embedding, retrieval pipeline, context injection
+- integration-planner output (`.plans/INTEGRATION-<name>.md`) → implement API client with auth, retry, fallback
+- agentic-designer output (`.plans/UI-<name>.md`) → implement UI components per interaction patterns
+- integration-planner flagged BLOCKED (missing creds) → skip those tasks, escalate — unblocked tasks first
 
 Write tests/evals first (RED), then implement (GREEN).
 
-**Cost tracking during BUILD:** If the plan has a cost envelope, track cumulative token usage during implementation. If cumulative cost exceeds 50% of the story's cost envelope before implementation is complete, stop and escalate to ai-architect — the cost estimate may need revision before continuing.
+**Cost tracking during BUILD:** plan has cost envelope → track cumulative token usage during implementation. Cumulative > 50% of story's cost envelope before complete → stop, escalate to ai-architect (cost estimate may need revision).
 
-**3. HARDEN** — After code is working, validate automatically:
-- Spawn `eval-designer` agent — runs the eval suite (`.plans/EVAL-<name>/`), scores outputs against rubric, compares to baseline. If no eval suite exists, it creates one from the acceptance criteria.
-- Spawn `guardrails-designer` agent — tests input/output guardrails, PII filtering, prompt injection defenses, audit logging.
-- **Both must pass** to proceed. If either fails:
-  - Eval failure → review the failing criteria, fix the prompt or code, re-run eval
-  - Guardrail failure → fix the gap, re-run validation
-  - If the same validation fails twice → stop and ask the user for guidance
+**3. HARDEN** — Validate after code works:
+- `eval-designer` → runs eval suite (`.plans/EVAL-<name>/`), scores vs rubric, compares to baseline. No eval suite → creates one from acceptance criteria.
+- `guardrails-designer` → tests input/output guardrails, PII filtering, injection defenses, audit logging.
+- **Both must pass.** Either fails:
+  - Eval failure → review failing criteria, fix prompt or code, re-run
+  - Guardrail failure → fix gap, re-run
+  - Same validation fails twice → stop, ask user
 
-**4. COMPLETE** — Present a summary listing files modified, eval scores, guardrail status. Ask the user: "What would you like to do next?" with options: Generate commit message, Generate PR description, Run /learn (capture learnings), or Done. Do not run any of these automatically — wait for the user's choice.
+**4. COMPLETE** — Summary: files modified, eval scores, guardrail status. Ask: "What next?" Options: commit msg / PR description / `/learn` / Done. No auto-action — wait for choice.
 
-**5. LEARN** — If the user chooses /learn, capture prompt patterns, model quirks, cost insights, and eval calibrations discovered during this task.
+**5. LEARN** — User chooses `/learn` → capture prompt patterns, model quirks, cost insights, eval calibrations discovered.
 
-**Todo discipline:** Never create a todo item for verification steps like "run tests", "run evals", "build project", or "verify changes". Testing, evaluation, and building are implicit parts of the implementation workflow, not standalone tasks.
+**Todo discipline:** never create todo item for verification steps ("run tests", "run evals", "build project", "verify changes"). Testing, evaluation, building are implicit, not standalone tasks.
 
-**Skip the full workflow for:** config changes, docs, CI, trivial one-line fixes — use the fast-path instead.
-If more files are affected than estimated mid-implementation, STOP and run `/ai-invert`.
-Always check `.plans/` for active plans before starting new work.
+**Skip full workflow for:** config changes, docs, CI, trivial one-line fixes — fast-path.
+More files affected than estimated mid-implementation → STOP, run `/ai-invert`.
+Always check `.plans/` for active plans before new work.
 <!-- [/NORTH-STARR-GENAI:how-to-approach-tasks] -->
 
 <!-- [NORTH-STARR-GENAI:auto-learn v1.0] -->
 ## When to Learn Automatically
 
-Run `/learn` automatically when: user corrects your approach, same fix requested twice, your change breaks something, user rejects generated code, you discover an undocumented convention, you hit a trap not in any landmine rule, prompt change causes unexpected regression, model-specific behavior discovered (works on one model, fails on another), cost optimization found (caching, batching, model selection), eval threshold adjusted (too strict or too loose), guardrail gap discovered in production, hallucination pattern identified, or data pipeline quirk encountered. Finish the immediate fix first, then capture the insight.
+Run `/learn` automatically when any of: user corrects your approach; same fix requested twice; your change breaks something; user rejects generated code; undocumented convention discovered; trap not in landmine rules; prompt change causes unexpected regression; model-specific behavior (works on one, fails on another); cost optimization found (caching, batching, model selection); eval threshold adjusted (too strict/loose); guardrail gap in production; hallucination pattern identified; data pipeline quirk. Finish immediate fix first, then capture.
 <!-- [/NORTH-STARR-GENAI:auto-learn] -->
 
 ## Tech Stack
 
-[List languages with versions, frameworks, key dependencies, build tools, package manager, test runner, CI/CD — be specific, not generic. Include: LLM provider SDKs, vector stores, embedding models, eval frameworks, prompt management tools.]
+[List languages with versions, frameworks, key dependencies, build tools, package manager, test runner, CI/CD — specific, not generic. Include LLM provider SDKs, vector stores, embedding models, eval frameworks, prompt management tools.]
 
 ## Architecture
 
-[Name the pattern (RAG pipeline, agent orchestration, prompt chain, etc.), topology (monolith, modular, microservices). List each layer with its responsibility and dependency direction. Include model selection strategy, caching approach, and guardrail placement.]
+[Name pattern (RAG pipeline, agent orchestration, prompt chain, etc.), topology (monolith, modular, microservices). List each layer with responsibility + dependency direction. Include model selection strategy, caching approach, guardrail placement.]
 
 ## Grain
 
-[What changes easily (e.g. adding a new prompt variant) vs. what is hard (e.g. changing the embedding model). State what to avoid going against and why.]
+[What changes easily (adding new prompt variant) vs hard (changing embedding model). State what to avoid going against + why.]
 
 ## Module Map
 
-[List each top-level module with one-line purpose. Show key dependencies between modules. Note shared infrastructure, model configs, and prompt registries.]
+[List each top-level module with one-line purpose. Show key dependencies between modules. Note shared infrastructure, model configs, prompt registries.]

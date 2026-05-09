@@ -2,6 +2,57 @@
 
 All notable changes to north-starr-genai will be documented in this file.
 
+## [0.16.0] — 2026-05-09
+
+### Token discipline — slice stories, compress peers, cap turns
+
+Cuts per-story input-token cost ~50% (observed ~1M tokens/wave → ~400-500k) by addressing the documented bloat traps: whole-STORIES reads, uncompressed Wave-1 peer artifacts, phantom optional-file reads, unbounded turn loops.
+
+#### New mandatory protocol — Token Discipline (every agent)
+
+Every agent prompt now ships a `## Token Discipline (MUST)` section. Rules enforced inside specialist threads:
+
+- **Existence-gate optional reads** — Glob first; skip missing `CLAUDE.md`, `AGENTS.md`, `LEARNINGS.md`, `DECISIONS.md`. No more failed-read token cost.
+- **Story-slice consumption** — orchestrator passes `.plans/stories/<story-id>.md` slice path. Specialists never re-read whole `STORIES-AI-<name>.md` (saves ~22k tokens × N specialists per wave).
+- **Compressed peer reads** — peer artifacts >5KB read in compressed form (`/caveman:compress` produces alongside original). Wave 2+ specialists pay ~50% less for prior-wave context.
+- **Section-range Reads** for files >300L (`Read` `offset`+`limit`).
+- **Turn budgets per agent** — 8 turns (orchestrator, baseline-capturer, auto-improver), 10 turns (ai-ops, integration-planner, agentic-designer, demo-builder, prompt-adversary, cost-estimator, genai-storymap), 12 turns (chief-ai-po, ai-architect, rag-advisor, prompt-engineer, eval-designer, guardrails-designer, ai-invert-analyst, genai-layoutplan). Beyond → checkpoint + partial output, not silent over-run.
+- **Iteration mode = latest version only** — read latest prompt version + diff, not full history.
+
+#### Story-slice protocol
+
+`chief-ai-po` and `genai-storymap` now emit per-story slice files to `.plans/stories/<story-id>.md` alongside the main story map. Orchestrator BUILD/HARDEN dispatch passes slice path only — never the whole STORIES file.
+
+#### Inter-wave compression hook
+
+Orchestrator now runs `/caveman:compress` on prior-wave artifacts (INVERT/BASELINE/COST/RAG/ADR) >5KB before dispatching Wave 2 specialists (PLAN→BUILD, BUILD→HARDEN). Eliminates the compounding read-cost trap where Wave 2 specialists each re-pay full token cost for Wave 1 outputs.
+
+#### Agent prompt compression
+
+Heavy agents trimmed (substance preserved, prose tightened) so per-turn system-prompt reload costs less:
+- `orchestrator`: 569 → 517 lines
+- `chief-ai-po`: 550 → 547 lines (added story-slice emission)
+- `rag-advisor`: 481 → 476 lines
+- `ai-architect`: 357 → 350 lines
+- `ai-ops`: 336 → 330 lines
+- `auto-improver`, `prompt-adversary`, `guardrails-designer`: trimmed in place
+
+#### Model rebalance (cost cut)
+
+- `eval-designer`: opus → **sonnet** (~80% dollar cut on this agent)
+- `prompt-adversary`: opus → **sonnet** (~80% dollar cut)
+- Reasoning-heavy agents kept on opus per v0.15.1 intent (`ai-architect`, `ai-invert-analyst`, `guardrails-designer`, `prompt-engineer`, `rag-advisor`).
+
+#### Templates synced
+
+- `templates/CLAUDE.md` (Claude Code seed) and `templates/AGENTS.md` (VS Code Copilot seed) bumped to **v3.1**: new `## Token Discipline` section + inter-wave compression instruction in BUILD phase.
+- `templates/claude/agents/*.md` mirrored from live `agents/*.md`.
+- `templates/github/agents/*.agent.md` (VS Code Copilot agent format) — Token Discipline block prepended to each.
+
+After upgrading: `north-starr-genai cache-update`, restart Claude Code, run `/genai-sync` in consuming projects to pick up the new managed sections in `CLAUDE.md`/`AGENTS.md`.
+
+For existing projects with bloated `.plans/`: run `/caveman:compress` on prior-wave artifacts (`INVERT-*.md`, `BASELINE-*.md`, `COST-*.md`, `RAG-*.md`, `ADR-*.md`) once — orchestrator handles compression for new waves automatically.
+
 ## [0.15.1] — 2026-05-09
 
 ### Agent model rebalancing

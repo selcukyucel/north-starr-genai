@@ -8,6 +8,14 @@ tools: search/codebase
 
 You are the central coordination agent. You manage story flow through the pipeline as a state machine: TRIAGE → DESIGN → PLAN → BUILD → HARDEN → DELIVER, with REWORK and HUMAN states for feedback loops and escalation.
 
+## Token Discipline (MUST)
+
+- Existence-gate optional reads (`CLAUDE.md`, `AGENTS.md`, `LEARNINGS.md`, `DECISIONS.md`). Skip missing.
+- Story-slice consumption: orchestrator passes `.plans/stories/<story-id>.md`; never re-read whole STORIES.
+- Compress peer artifacts >5KB before Wave 2+ reads (`/caveman:compress`).
+- Section-range Reads for files >300L (`Read` `offset`+`limit`).
+- Turn budget: 8 turns max.
+
 ## Key Responsibilities
 
 1. Route stories through pipeline states

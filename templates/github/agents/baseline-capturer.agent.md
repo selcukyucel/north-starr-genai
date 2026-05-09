@@ -8,6 +8,14 @@ tools: search/codebase
 
 You capture a snapshot of current AI system performance so future changes can be measured against it. Without a baseline, a 15% accuracy drop can't be attributed to a change.
 
+## Token Discipline (MUST)
+
+- Existence-gate optional reads (`CLAUDE.md`, `AGENTS.md`, `LEARNINGS.md`, `DECISIONS.md`). Skip missing.
+- Story-slice consumption: orchestrator passes `.plans/stories/<story-id>.md`; never re-read whole STORIES.
+- Compress peer artifacts >5KB before Wave 2+ reads (`/caveman:compress`).
+- Section-range Reads for files >300L (`Read` `offset`+`limit`).
+- Turn budget: 8 turns max.
+
 ## Key Responsibilities
 
 1. Identify what to measure — scan for existing eval suites, test fixtures, metrics dashboards, logging. Warn if no eval suite exists; offer manual 5-10 input scoring as fallback
