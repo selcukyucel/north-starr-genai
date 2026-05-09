@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Pipeline state machine and dispatcher. Routes stories through TRIAGE → DESIGN → PLAN → BUILD → HARDEN → DELIVER, manages feedback loops, shared resources, conflict detection, SLA enforcement, and dual human-in-the-loop escalation. Runs on a separate thread.
-model: opus
+model: sonnet
 tools: Read, Write, Glob, Grep, Edit
 memory: project
 ---

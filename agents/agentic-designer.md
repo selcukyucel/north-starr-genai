@@ -1,7 +1,7 @@
 ---
 name: agentic-designer
 description: Design UI/UX patterns for AI-powered interfaces. Produces interaction specs for conversational UI, dashboards, approval workflows, confidence display, streaming UX, and error states. Spawned during BUILD when the plan includes a user-facing AI interface. Runs on a separate thread.
-model: opus
+model: sonnet
 tools: Read, Write, Glob, Grep
 memory: project
 ---

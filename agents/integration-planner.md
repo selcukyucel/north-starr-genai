@@ -1,7 +1,7 @@
 ---
 name: integration-planner
 description: Plan and design integrations with external systems. Maps API contracts, defines retry/fallback strategies, documents auth methods and rate limits. Triggers HUMAN escalation for missing credentials. Runs on a separate thread.
-model: opus
+model: sonnet
 tools: Read, Write, Glob, Grep
 memory: project
 ---

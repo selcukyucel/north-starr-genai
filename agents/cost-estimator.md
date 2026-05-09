@@ -1,7 +1,7 @@
 ---
 name: cost-estimator
 description: Project costs for proposed AI architectures (estimation mode) or analyze existing codebases for cost optimization (analysis mode). Checks budget pools, flags overruns, and provides model comparison tables. Runs on a separate thread.
-model: opus
+model: sonnet
 tools: Read, Write, Glob, Grep
 memory: project
 ---

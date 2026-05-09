@@ -1,7 +1,7 @@
 ---
 name: auto-improver
 description: Autonomously improve any skill or agent prompt using a measure-change-test hill-climbing loop. Runs the target repeatedly, scores output against a yes/no checklist, makes one small change per round, keeps improvements, reverts regressions. Runs on a separate thread. Invoked via `/autoimprove` skill.
-model: opus
+model: sonnet
 tools: Read, Write, Glob, Grep, Edit
 memory: project
 ---

@@ -2,6 +2,21 @@
 
 All notable changes to north-starr-genai will be documented in this file.
 
+## [0.15.1] — 2026-05-09
+
+### Agent model rebalancing
+
+Agent frontmatter `model:` fields realigned to match the canonical `agents-copy/` reference. Goal: route reasoning-heavy work to Opus, coordination/decomposition work to Sonnet, and lightweight measurement to Haiku.
+
+- **opus → sonnet** (9 agents): `agentic-designer`, `auto-improver`, `chief-ai-po`, `cost-estimator`, `genai-layoutplan`, `genai-storymap`, `integration-planner`, `orchestrator`
+- **opus → haiku** (1 agent): `baseline-capturer`
+- **unchanged (opus)**: `ai-architect`, `ai-invert-analyst`, `eval-designer`, `guardrails-designer`, `prompt-adversary`, `prompt-engineer`, `rag-advisor`
+- **unchanged (sonnet)**: `ai-ops`, `demo-builder`
+
+No behavior or prompt changes — only model assignments. Existing delegation policy, hooks, and cross-consult rules from v0.15.0 remain in force.
+
+After upgrading: run `north-starr-genai cache-update` then restart Claude Code.
+
 ## [0.15.0] — 2026-04-16
 
 ### Overview

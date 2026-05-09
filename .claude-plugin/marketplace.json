@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Agentic AI development workflow for Claude Code — AI-specific skills, agents, and project context for teams building AI automations",
-    "version": "0.15.0"
+    "version": "0.15.1"
   },
   "plugins": [
     {

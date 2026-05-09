@@ -1,7 +1,7 @@
 ---
 name: genai-storymap
 description: Decompose PRDs into epics and user stories. Reads .plans/PRD-*.md files and produces structured story maps with dependencies and priorities. Runs on a separate thread to keep the main context clean.
-model: opus
+model: sonnet
 tools: Read, Write, Glob, Grep
 memory: project
 ---

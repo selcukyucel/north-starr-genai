@@ -1,7 +1,7 @@
 ---
 name: baseline-capturer
 description: Capture a reproducible performance baseline for an AI component before changes. Measures accuracy, latency, token usage, cost, error rate, and format compliance. Produces `.plans/BASELINE-<name>.md`. Runs on a separate thread. Invoked via `/baseline` skill or by `eval-designer` before designing an eval suite.
-model: opus
+model: haiku
 tools: Read, Write, Glob, Grep
 memory: project
 ---

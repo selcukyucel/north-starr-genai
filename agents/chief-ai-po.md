@@ -1,7 +1,7 @@
 ---
 name: chief-ai-po
 description: AI Product Owner agent. Three modes — decompose (PRD to stories), refine (enrich story with AI acceptance criteria for TRIAGE), incorporate-feedback (revise story from downstream agent feedback for REWORK). Produces stories with inverted failure modes, AI safety stories, and graceful degradation. Runs on a separate thread.
-model: opus
+model: sonnet
 tools: Read, Write, Glob, Grep, Edit
 memory: project
 ---
