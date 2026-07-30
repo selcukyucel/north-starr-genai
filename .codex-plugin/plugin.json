@@ -1,6 +1,6 @@
 {
   "name": "north-starr-genai",
-  "version": "0.17.0+codex.20260729182728",
+  "version": "0.17.0",
   "description": "Evidence-led discovery, AI architecture, evaluation, safety, and delivery workflows for Codex.",
   "author": {
     "name": "Selcuk Yucel",
