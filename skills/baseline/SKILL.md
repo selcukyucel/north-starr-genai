@@ -1,7 +1,6 @@
 ---
 name: baseline
 description: Capture a reproducible AI performance baseline before changes. Dispatches the `baseline-capturer` agent on a separate thread. Use before any change to a client-facing AI output. Triggered automatically by the Q3 gate in CLAUDE.md.
-argument-hint: <component or pipeline name>
 ---
 
 # /baseline — Dispatch the Baseline Capturer

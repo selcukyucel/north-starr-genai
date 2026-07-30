@@ -1,7 +1,7 @@
 # Pattern: [Pattern Name]
 
 **Category**: [Architecture / Data / UI / Testing / Integration / Performance / Infrastructure / Security / Error Handling / Prompt Engineering / RAG / Model Configuration / Guardrails]
-**Virtues**: [Working / Unique / Simple / Clear / Easy / Developed / Brief — list the primary virtue(s) this pattern serves. See `skills/_references/virtues/code-virtues.md`]
+**Virtues**: [Working / Unique / Simple / Clear / Easy / Developed / Brief — list the primary virtue(s) this pattern serves. See `references/virtues/code-virtues.md`]
 **Language/Framework**: [Any / specify — must match the project's detected language, never hardcode]
 **Last Updated**: [Date]
 

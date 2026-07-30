@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/selcukyucel/north-starr-genai/schemas/architecture-proposal.schema.json",
+  "title": "North Starr architecture proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "proposal_id",
+    "engagement_id",
+    "generated_at",
+    "status",
+    "source_hashes",
+    "cards",
+    "recommended_shape",
+    "multi_agent_valid",
+    "model_selection_status",
+    "artifact_refs",
+    "alternatives",
+    "assumptions",
+    "open_questions",
+    "approval",
+    "human_boundary"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "artifact_type": { "const": "architecture_proposal" },
+    "proposal_id": { "type": "string", "minLength": 1 },
+    "engagement_id": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["proposed", "accepted", "rejected", "superseded", "stale"] },
+    "source_hashes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+      "uniqueItems": true
+    },
+    "cards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "goal_scope",
+        "system_shape",
+        "information_tools",
+        "human_control",
+        "quality_operations",
+        "runtime_technology"
+      ],
+      "properties": {
+        "goal_scope": { "$ref": "#/$defs/card" },
+        "system_shape": { "$ref": "#/$defs/card" },
+        "information_tools": { "$ref": "#/$defs/card" },
+        "human_control": { "$ref": "#/$defs/card" },
+        "quality_operations": { "$ref": "#/$defs/card" },
+        "runtime_technology": { "$ref": "#/$defs/card" }
+      }
+    },
+    "recommended_shape": {
+      "enum": [
+        "no_change_or_no_build",
+        "process_or_configuration",
+        "buy_or_managed_capability",
+        "deterministic_software",
+        "deterministic_workflow_with_one_ai_component",
+        "prompt_chain",
+        "governed_workflow",
+        "bounded_agent_loop",
+        "multi_agent"
+      ]
+    },
+    "multi_agent_valid": { "type": "boolean" },
+    "model_selection_status": { "const": "benchmark_required" },
+    "artifact_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["technology_stack", "tool_registry", "manifest"],
+      "properties": {
+        "technology_stack": { "type": "string", "minLength": 1 },
+        "tool_registry": { "type": "string", "minLength": 1 },
+        "manifest": { "type": "string", "minLength": 1 }
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "disposition", "rationale"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "disposition": { "enum": ["candidate", "rejected", "conditional"] },
+          "rationale": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "open_questions": { "type": "array", "maxItems": 3, "items": { "type": "string" } },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "approver", "decided_at", "scope", "evidence_hashes", "residual_risk_owner"],
+      "properties": {
+        "status": { "enum": ["not_requested", "pending", "accepted", "rejected"] },
+        "approver": { "type": ["string", "null"] },
+        "decided_at": { "type": ["string", "null"], "format": "date-time" },
+        "scope": { "type": ["string", "null"] },
+        "evidence_hashes": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "uniqueItems": true
+        },
+        "residual_risk_owner": { "type": ["string", "null"] }
+      }
+    },
+    "human_boundary": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "card": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "decisions", "evidence_refs", "unknowns"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "decisions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/decision" }
+        },
+        "evidence_refs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "unknowns": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_id",
+        "title",
+        "value",
+        "selection_status",
+        "rationale",
+        "evidence_refs"
+      ],
+      "properties": {
+        "decision_id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "value": {
+          "type": ["string", "number", "boolean", "object", "array", "null"]
+        },
+        "selection_status": {
+          "enum": [
+            "proposed",
+            "selected",
+            "benchmark_required",
+            "spike_required",
+            "unknown",
+            "not_applicable"
+          ]
+        },
+        "rationale": { "type": "string", "minLength": 1 },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

@@ -47,9 +47,21 @@ Run `/learn` automatically when any of these signals occur during a session:
 
 Generated rules must carry enough depth to be genuinely useful. Use two content structures from the project's knowledge base:
 
-- **Pattern structure** (`skills/_references/patterns/_TEMPLATE.md`) — for conventions and reusable approaches. Follow the full template: Virtues (which code virtues it serves), When to Use, Problem It Solves, Core Approach with step-by-step code examples, Complete Example, Best Practices, Common Mistakes with wrong/fix code, Variations, Testing This Pattern, Performance Considerations, Related patterns and landmines, Changelog.
-- **Landmine structure** (`skills/_references/landmines/_TEMPLATE.md`) — for danger zones and known traps. Follow the full template: Severity with evidence, Threatens (which code virtues it endangers), Symptoms, Root Cause, The Trap, Safe Approach (Don't/Do with code), Validation, Real-World Impact (cite specific instances), Prevention, Related patterns and landmines, Origin, Changelog.
-- **Code Virtues** (`skills/_references/virtues/code-virtues.md`) — the 7 code virtues (Working, Unique, Simple, Clear, Easy, Developed, Brief) used to tag patterns and landmines.
+- **Pattern structure** (`../../references/patterns/_TEMPLATE.md`) — for
+  conventions and reusable approaches. Follow the full template: Virtues (which
+  code virtues it serves), When to Use, Problem It Solves, Core Approach with
+  step-by-step code examples, Complete Example, Best Practices, Common Mistakes
+  with wrong/fix code, Variations, Testing This Pattern, Performance
+  Considerations, Related patterns and landmines, Changelog.
+- **Landmine structure** (`../../references/landmines/_TEMPLATE.md`) — for danger
+  zones and known traps. Follow the full template: Severity with evidence,
+  Threatens (which code virtues it endangers), Symptoms, Root Cause, The Trap,
+  Safe Approach (Don't/Do with code), Validation, Real-World Impact (cite
+  specific instances), Prevention, Related patterns and landmines, Origin,
+  Changelog.
+- **Code Virtues** (`../../references/virtues/code-virtues.md`) — the 7 code
+  virtues (Working, Unique, Simple, Clear, Easy, Developed, Brief) used to tag
+  patterns and landmines.
 
 **Line limits:**
 - **Context files** (CLAUDE.md, AGENTS.md): MUST stay under **100 lines** (max 125 if critical context would be lost). Split into multiple scoped files rather than exceeding.
@@ -213,9 +225,23 @@ When a convention, constraint, or danger was discovered, create in each enabled 
 
 The rule body is the same across tools — only the frontmatter differs. Choose the appropriate structure:
 
-**Pattern Rules** — for conventions and reusable approaches. Follow the **full pattern template** from `skills/_references/patterns/_TEMPLATE.md`. Include: Category, **Virtues** (which code virtues it serves), When to Use / Not Good For, Problem It Solves, The Pattern (step-by-step with code from the actual codebase), Complete Example, Best Practices, Common Mistakes (wrong/fix code), Variations, Testing This Pattern (with test code), Performance Considerations, Related (with relationship types: Composes with, Alternative to, Prevents, Misapplication causes), Changelog.
+**Pattern Rules** — for conventions and reusable approaches. Follow the **full
+pattern template** from `../../references/patterns/_TEMPLATE.md`. Include:
+Category, **Virtues** (which code virtues it serves), When to Use / Not Good
+For, Problem It Solves, The Pattern (step-by-step with code from the actual
+codebase), Complete Example, Best Practices, Common Mistakes (wrong/fix code),
+Variations, Testing This Pattern (with test code), Performance Considerations,
+Related (with relationship types: Composes with, Alternative to, Prevents,
+Misapplication causes), Changelog.
 
-**Landmine Rules** — for danger zones and known traps. Follow the **full landmine template** from `skills/_references/landmines/_TEMPLATE.md`. Include: Severity with evidence justification, **Threatens** (which code virtues it endangers), Category, Quick Summary, Symptoms, Root Cause, The Trap, Safe Approach (Don't/Do with code from the actual codebase), Validation (with grep/search commands), Real-World Impact (cite specific files/instances), Prevention, Related (Safe Patterns, Other Landmines, Caused by misapplying), Origin, Changelog.
+**Landmine Rules** — for danger zones and known traps. Follow the **full
+landmine template** from `../../references/landmines/_TEMPLATE.md`. Include:
+Severity with evidence justification, **Threatens** (which code virtues it
+endangers), Category, Quick Summary, Symptoms, Root Cause, The Trap, Safe
+Approach (Don't/Do with code from the actual codebase), Validation (with
+grep/search commands), Real-World Impact (cite specific files/instances),
+Prevention, Related (Safe Patterns, Other Landmines, Caused by misapplying),
+Origin, Changelog.
 
 **Guidelines:**
 - Scope the glob as narrowly as possible — **anti-patterns:** `**/*`, `**/src/**`, `**/*.py`. **Good:** `**/src/api/routes/**/*.ts`, `**/models/**/*repository*`. Include file naming conventions in the glob when applicable.

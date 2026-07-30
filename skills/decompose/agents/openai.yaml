@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decompose Accepted Scope"
+  short_description: "Turn accepted scope into executable stories"
+  default_prompt: "Decompose this accepted scope into prioritized, dependency-aware stories."
+policy:
+  allow_implicit_invocation: false

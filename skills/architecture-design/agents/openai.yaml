@@ -1,0 +1,6 @@
+interface:
+  display_name: "Design AI Architecture"
+  short_description: "Create a simple evidence-led AI proposal"
+  default_prompt: "Propose the simplest defensible AI architecture and technology stack."
+policy:
+  allow_implicit_invocation: true

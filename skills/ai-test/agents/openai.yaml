@@ -1,0 +1,6 @@
+interface:
+  display_name: "Generate AI Tests"
+  short_description: "Create deterministic tests for structured AI behavior"
+  default_prompt: "Create executable tests for this structured AI behavior."
+policy:
+  allow_implicit_invocation: false

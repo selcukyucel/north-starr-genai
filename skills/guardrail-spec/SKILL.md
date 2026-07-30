@@ -1,7 +1,6 @@
 ---
 name: guardrail-spec
 description: Generate input/output guardrail specifications for an AI automation. Covers PII detection, prompt injection filtering, content safety, confidence thresholds, human escalation, fallback behavior, and audit logging.
-argument-hint: <automation or feature description>
 ---
 
 # Guardrail Spec — Input/Output Guardrail Specification

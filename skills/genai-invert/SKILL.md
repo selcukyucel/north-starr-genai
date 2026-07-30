@@ -1,7 +1,6 @@
 ---
 name: genai-invert
 description: Deep structured inversion analysis on a requirement before implementation. Identifies risks, edge cases, failure modes, and convention violations. Use before complex or high-stakes tasks.
-argument-hint: <requirement or feature description>
 ---
 
 # Inversion Analysis — What Could Go Wrong?
@@ -84,7 +83,8 @@ Systematically work through each dimension:
 
 #### F. Virtue Trade-offs (Code Quality)
 
-Check this change against the 7 Code Virtues (see `skills/_references/virtues/code-virtues.md`) in priority order:
+Check this change against the 7 Code Virtues (read
+`../../references/virtues/code-virtues.md`) in priority order:
 
 - **Working**: Could this break existing behavior? Are there tests proving current correctness?
 - **Unique**: Does this duplicate logic that already exists elsewhere?

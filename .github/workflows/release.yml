@@ -40,12 +40,13 @@ jobs:
           echo "sha256=$sha" >> "$GITHUB_OUTPUT"
           echo "SHA256: $sha"
 
-      - name: Update Formula, CLI, marketplace
+      - name: Update Formula, CLI, and plugin versions
         run: |
           sed -i "s|sha256 \".*\"|sha256 \"${{ steps.sha.outputs.sha256 }}\"|" Formula/north-starr-genai.rb
           sed -i "s|url \".*\"|url \"https://github.com/${{ github.repository }}/archive/refs/tags/${{ steps.version.outputs.version }}.tar.gz\"|" Formula/north-starr-genai.rb
           sed -i "s/^VERSION=\".*\"/VERSION=\"${{ steps.version.outputs.version_no_v }}\"/" bin/north-starr-genai
           sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.version.outputs.version_no_v }}\"/g" .claude-plugin/marketplace.json
+          sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.version.outputs.version_no_v }}\"/" .codex-plugin/plugin.json
 
       - name: Commit and push (best-effort)
         id: push
@@ -53,7 +54,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/north-starr-genai.rb bin/north-starr-genai .claude-plugin/marketplace.json
+          git add Formula/north-starr-genai.rb bin/north-starr-genai .claude-plugin/marketplace.json .codex-plugin/plugin.json
           if git diff --cached --quiet; then
             echo "No changes to commit (likely the maintainer already pushed the release commit)."
             echo "pushed=skipped" >> "$GITHUB_OUTPUT"

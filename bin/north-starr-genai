@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.16.0"
+VERSION="0.17.0"
 NORTH_STARR_GENAI_HOME="${NORTH_STARR_GENAI_HOME:-}"
 
 # Resolve where templates live
@@ -359,6 +359,14 @@ cmd_init() {
     cp -r "$skills_dir/"* "$target_dir/.github/skills/"
     validate_skills "$target_dir/.github/skills"
     print_success ".github/skills/ — VS Code Copilot skills"
+
+    local references_dir
+    references_dir="$(dirname "$skills_dir")/references"
+    if [[ -d "$references_dir" ]]; then
+      mkdir -p "$target_dir/.github/references"
+      cp -R "$references_dir/." "$target_dir/.github/references/"
+      print_success ".github/references/ — shared North Starr references"
+    fi
   fi
 
   # Copy agents to .github/agents/ (VS Code Copilot)
@@ -408,6 +416,64 @@ cmd_init() {
   echo ""
 }
 
+# ─── CODEX INIT ────────────────────────────────────────────────────────────────
+
+cmd_codex_init() {
+  local target_dir
+  target_dir="$(resolve_target_dir "${1:-}")"
+
+  print_banner
+
+  local template_dir
+  template_dir="$(require_template_dir)"
+
+  local skills_dir
+  skills_dir="$(resolve_skills_dir "$template_dir")"
+
+  echo -e "${BOLD}  Installing North Starr GenAI for Codex in:${NC}"
+  echo -e "  ${DIM}$target_dir${NC}"
+  echo ""
+
+  if [[ -n "$skills_dir" && -d "$skills_dir" ]]; then
+    mkdir -p "$target_dir/.agents/skills"
+    cp -R "$skills_dir/." "$target_dir/.agents/skills/"
+    validate_skills "$target_dir/.agents/skills"
+    local skill_count
+    skill_count="$(find "$target_dir/.agents/skills" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ')"
+    print_success ".agents/skills/ — ${skill_count} Codex skills"
+
+    local references_dir
+    references_dir="$(dirname "$skills_dir")/references"
+    if [[ -d "$references_dir" ]]; then
+      mkdir -p "$target_dir/.agents/references"
+      cp -R "$references_dir/." "$target_dir/.agents/references/"
+      print_success ".agents/references/ — shared North Starr references"
+    fi
+  else
+    print_error "Skills directory could not be found"
+    exit 1
+  fi
+
+  if [[ -f "$target_dir/AGENTS.md" ]]; then
+    print_info "AGENTS.md preserved (already exists)"
+  elif [[ -f "$template_dir/codex/AGENTS.md" ]]; then
+    cp "$template_dir/codex/AGENTS.md" "$target_dir/AGENTS.md"
+    print_success "AGENTS.md — compact Codex project instructions"
+  fi
+
+  echo ""
+  echo -e "${GREEN}${BOLD}  Done!${NC} North Starr GenAI is available to Codex in this project."
+  echo ""
+  echo -e "  ${BOLD}Start a new Codex task, then use:${NC}"
+  echo -e "    ${CYAN}\$intake${NC}               — validate Vignola or other discovery evidence"
+  echo -e "    ${CYAN}\$assess${NC}               — choose the simplest viable system shape"
+  echo -e "    ${CYAN}\$architecture-design${NC}  — create a proposed architecture and stack decision"
+  echo ""
+  echo -e "  ${DIM}Codex desktop and CLI users can install the plugin instead; this"
+  echo -e "  project-local command is useful where plugin loading is unavailable.${NC}"
+  echo ""
+}
+
 # ─── UPDATE ────────────────────────────────────────────────────────────────────
 
 cmd_update() {
@@ -432,6 +498,14 @@ cmd_update() {
     cp -r "$skills_dir/"* "$target_dir/.github/skills/"
     validate_skills "$target_dir/.github/skills"
     print_success "Updated .github/skills/"
+
+    local references_dir
+    references_dir="$(dirname "$skills_dir")/references"
+    if [[ -d "$references_dir" ]]; then
+      mkdir -p "$target_dir/.github/references"
+      cp -R "$references_dir/." "$target_dir/.github/references/"
+      print_success "Updated .github/references/"
+    fi
   fi
 
   # Update AGENTS.md if it's still the starter template (always — universal)
@@ -501,7 +575,7 @@ cmd_status() {
   # Check AGENTS.md (universal)
   if [[ -f "$target_dir/AGENTS.md" ]]; then
     if is_starter_template "$target_dir/AGENTS.md"; then
-      print_success "AGENTS.md — starter (run /genai-bootstrap to generate project config)"
+      print_success "AGENTS.md — starter (run genai-bootstrap to generate project config)"
     else
       print_success "AGENTS.md — project-specific"
     fi
@@ -516,6 +590,17 @@ cmd_status() {
     print_success ".github/skills/ — ${github_skill_count} skills (VS Code Copilot)"
   else
     print_info ".github/skills/ — not installed"
+  fi
+
+  if [[ -d "$target_dir/.agents/skills" ]]; then
+    local codex_skill_count
+    codex_skill_count="$(find "$target_dir/.agents/skills" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ')"
+    print_success ".agents/skills/ — ${codex_skill_count} skills (Codex)"
+  else
+    print_info ".agents/skills/ — not installed"
+  fi
+
+  if [[ ! -d "$target_dir/.github/skills" && ! -d "$target_dir/.agents/skills" ]]; then
     initialized=false
   fi
 
@@ -566,7 +651,11 @@ cmd_status() {
   if [[ "$initialized" == "false" ]]; then
     print_info "Run ${BOLD}north-starr-genai init${NC} to install North Starr GenAI."
   elif [[ "$bootstrapped" == "false" ]]; then
-    echo -e "  ${YELLOW}${BOLD}Skills installed.${NC} Run ${CYAN}/genai-bootstrap${NC} to generate config from existing code."
+    if [[ -d "$target_dir/.agents/skills" ]]; then
+      echo -e "  ${YELLOW}${BOLD}Skills installed.${NC} Run ${CYAN}\$genai-bootstrap${NC} in Codex to generate project context."
+    else
+      echo -e "  ${YELLOW}${BOLD}Skills installed.${NC} Run ${CYAN}/genai-bootstrap${NC} to generate config from existing code."
+    fi
   else
     echo -e "  ${GREEN}${BOLD}North Starr GenAI is fully configured.${NC}"
   fi
@@ -645,6 +734,7 @@ cmd_help() {
   echo ""
   echo -e "${BOLD}  Commands:${NC}"
   echo -e "    ${CYAN}init${NC}           [dir]   Install North Starr GenAI skills in a project"
+  echo -e "    ${CYAN}codex-init${NC}     [dir]   Install project-local Codex skills + compact AGENTS.md"
   echo -e "    ${CYAN}update${NC}         [dir]   Update skills (preserves your config)"
   echo -e "    ${CYAN}status${NC}         [dir]   Check setup status"
   echo -e "    ${CYAN}cache-update${NC}           Refresh Claude Code plugin cache"
@@ -652,16 +742,22 @@ cmd_help() {
   echo -e "    ${CYAN}version${NC}                Show version"
   echo ""
   echo -e "${BOLD}  Distribution:${NC}"
+  echo -e "    Codex desktop/CLI → Install the native Codex plugin"
+  echo -e "    Codex project     → Run ${CYAN}codex-init${NC} for project-local skills"
   echo -e "    VS Code Copilot → Install via Homebrew (this CLI)"
   echo -e "    Claude Code     → Install via the marketplace"
   echo ""
   echo -e "${BOLD}  Examples:${NC}"
   echo -e "    ${DIM}north-starr-genai init${NC}              # Initialize in current directory"
+  echo -e "    ${DIM}north-starr-genai codex-init${NC}        # Install project-local Codex skills"
   echo -e "    ${DIM}north-starr-genai init ~/my-project${NC}  # Initialize in specific directory"
   echo -e "    ${DIM}north-starr-genai update${NC}             # Update to latest skills"
   echo -e "    ${DIM}north-starr-genai status${NC}             # Check setup status"
   echo ""
   echo -e "${BOLD}  After init, use these skills in your AI tool:${NC}"
+  echo -e "    \$intake / /intake              — Validate discovery evidence"
+  echo -e "    \$assess / /assess              — Choose the simplest viable approach"
+  echo -e "    \$architecture-design           — Create a governed architecture proposal"
   echo -e "    /ai-invert             — Deep AI risk analysis before complex tasks"
   echo -e "    /baseline              — Generate project baseline from existing code"
   echo -e "    /cost-estimate         — Estimate AI development costs"
@@ -685,6 +781,9 @@ main() {
   case "$command" in
     init)
       cmd_init "${2:-}"
+      ;;
+    codex-init)
+      cmd_codex_init "${2:-}"
       ;;
     update)
       cmd_update "${2:-}"

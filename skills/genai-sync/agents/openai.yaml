@@ -1,0 +1,6 @@
+interface:
+  display_name: "Sync North Starr"
+  short_description: "Refresh managed project instructions"
+  default_prompt: "Refresh North Starr managed instructions while preserving project-specific content."
+policy:
+  allow_implicit_invocation: false

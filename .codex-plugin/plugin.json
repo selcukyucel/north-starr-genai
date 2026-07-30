@@ -1,0 +1,36 @@
+{
+  "name": "north-starr-genai",
+  "version": "0.17.0+codex.20260729182728",
+  "description": "Evidence-led discovery, AI architecture, evaluation, safety, and delivery workflows for Codex.",
+  "author": {
+    "name": "Selcuk Yucel",
+    "url": "https://github.com/selcukyucel"
+  },
+  "homepage": "https://github.com/selcukyucel/north-starr-genai",
+  "repository": "https://github.com/selcukyucel/north-starr-genai",
+  "license": "MIT",
+  "keywords": [
+    "ai-architecture",
+    "discovery",
+    "agent-design",
+    "evaluation",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "North Starr GenAI",
+    "shortDescription": "Design evidence-led, production-ready AI systems.",
+    "longDescription": "Turn discovery evidence into a simple architecture recommendation, explicit technology and MCP decisions, evaluation plans, guardrails, and governed delivery artifacts.",
+    "developerName": "Selcuk Yucel",
+    "category": "Developer",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Validate this Vignola handoff before architecture work.",
+      "Assess the simplest system shape for this requirement.",
+      "Create a proposed AI architecture and tech-stack decision."
+    ]
+  }
+}

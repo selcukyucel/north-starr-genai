@@ -1,7 +1,6 @@
 ---
 name: eval-suite
 description: Generate evaluation datasets from requirements. Creates golden examples, adversarial inputs, boundary cases, and regression anchors with scoring rubrics. Use when building test suites for AI outputs.
-argument-hint: <requirement, prompt, or feature description>
 ---
 
 # Eval Suite — Evaluation Dataset Generator

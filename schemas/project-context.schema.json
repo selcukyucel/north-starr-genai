@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://north-starr-genai.dev/schemas/project-context/1.0.0",
+  "title": "North Starr Project Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "generated_at",
+    "project",
+    "commands",
+    "stack",
+    "modules",
+    "external_systems",
+    "ai_components",
+    "mcp_servers",
+    "quality_controls",
+    "risks",
+    "unknowns",
+    "evidence",
+    "source_hashes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "artifact_type": {
+      "const": "project_context"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "root",
+        "purpose"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "build",
+        "test",
+        "lint",
+        "run"
+      ],
+      "properties": {
+        "build": {
+          "$ref": "#/$defs/stringList"
+        },
+        "test": {
+          "$ref": "#/$defs/stringList"
+        },
+        "lint": {
+          "$ref": "#/$defs/stringList"
+        },
+        "run": {
+          "$ref": "#/$defs/stringList"
+        }
+      }
+    },
+    "stack": {
+      "$ref": "#/$defs/recordList"
+    },
+    "modules": {
+      "$ref": "#/$defs/recordList"
+    },
+    "external_systems": {
+      "$ref": "#/$defs/recordList"
+    },
+    "ai_components": {
+      "$ref": "#/$defs/recordList"
+    },
+    "mcp_servers": {
+      "$ref": "#/$defs/recordList"
+    },
+    "quality_controls": {
+      "$ref": "#/$defs/recordList"
+    },
+    "risks": {
+      "$ref": "#/$defs/recordList"
+    },
+    "unknowns": {
+      "$ref": "#/$defs/stringList"
+    },
+    "evidence": {
+      "$ref": "#/$defs/recordList"
+    },
+    "source_hashes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^sha256:[a-f0-9]{64}$"
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "stringList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "recordList": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "minProperties": 1
+      }
+    }
+  }
+}

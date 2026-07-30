@@ -1,0 +1,6 @@
+interface:
+  display_name: "Design AI Evaluations"
+  short_description: "Create gold, boundary, and unsafe evaluation cases"
+  default_prompt: "Create a representative evaluation suite and explicit scoring criteria."
+policy:
+  allow_implicit_invocation: false

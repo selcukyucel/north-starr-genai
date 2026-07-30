@@ -1,0 +1,6 @@
+interface:
+  display_name: "Report Weekly Progress"
+  short_description: "Summarize progress, decisions, risks, and next steps"
+  default_prompt: "Create this week's concise North Starr progress report."
+policy:
+  allow_implicit_invocation: false

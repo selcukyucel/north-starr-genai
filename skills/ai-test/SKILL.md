@@ -1,7 +1,6 @@
 ---
 name: ai-test
 description: Generate executable pytest test files for AI outputs. Produces assertion-based tests for deterministic AI components (classification, extraction, routing, structured output) that run in CI/CD. Complements /eval-suite which produces statistical evaluation datasets for non-deterministic outputs.
-argument-hint: <prompt name, pipeline name, or eval suite path>
 ---
 
 # AI Test — Executable Test Code Generator

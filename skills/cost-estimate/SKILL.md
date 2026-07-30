@@ -1,7 +1,6 @@
 ---
 name: cost-estimate
 description: Estimate token costs for a proposed AI automation or change. Projects per-request and monthly costs at 1x, 10x, 100x scale with model comparison. Use before building or when the complexity gate detects cost impact (Q4=Yes).
-argument-hint: <automation or change description>
 ---
 
 # Cost Estimate — Token Cost Projection

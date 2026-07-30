@@ -5,13 +5,13 @@
     "email": ""
   },
   "metadata": {
-    "description": "Agentic AI development workflow for Claude Code — AI-specific skills, agents, and project context for teams building AI automations",
-    "version": "0.16.0"
+    "description": "Evidence-led AI discovery, architecture, evaluation, and governed delivery for Claude Code",
+    "version": "0.17.0"
   },
   "plugins": [
     {
       "name": "north-starr-genai",
-      "description": "Agentic AI development workflow for Claude Code — AI-specific skills, agents, and project context for teams building AI automations",
+      "description": "Evidence-led AI discovery, architecture, evaluation, and governed delivery for Claude Code",
       "source": "./",
       "strict": true,
       "skills": [
@@ -38,7 +38,9 @@
         "./skills/prompt-version",
         "./skills/orchestrate",
         "./skills/assess",
-        "./skills/discover"
+        "./skills/discover",
+        "./skills/intake",
+        "./skills/architecture-design"
       ]
     }
   ]

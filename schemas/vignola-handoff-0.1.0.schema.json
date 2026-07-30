@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/selcukyucel/north-starr-genai/schemas/vignola-handoff-0.1.0.schema.json",
+  "title": "Vignola to North Starr handoff 0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "export_type",
+    "handoff_type",
+    "generated_at",
+    "engagement_id",
+    "source_hashes",
+    "problem",
+    "outcome",
+    "mvp_scope",
+    "architecture_profile",
+    "constraints",
+    "risks",
+    "evaluation_examples",
+    "open_questions",
+    "artifact_references",
+    "recommended_entrypoint",
+    "human_boundary"
+  ],
+  "properties": {
+    "schema_version": { "const": "0.1.0" },
+    "export_type": { "const": "north_starr_handoff" },
+    "handoff_type": { "const": "north_starr_handoff" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "engagement_id": { "type": "string", "minLength": 1 },
+    "source_hashes": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+      "uniqueItems": true
+    },
+    "problem": { "$ref": "#/$defs/response" },
+    "outcome": { "$ref": "#/$defs/response" },
+    "mvp_scope": { "$ref": "#/$defs/response" },
+    "architecture_profile": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/architectureProfile" }
+      ]
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/response" }
+    },
+    "risks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/response" }
+    },
+    "evaluation_examples": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/response" }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/response" }
+    },
+    "artifact_references": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifactReference" }
+    },
+    "recommended_entrypoint": { "const": "assess" },
+    "human_boundary": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "hashes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^sha256:[a-f0-9]{64}$"
+      },
+      "uniqueItems": true
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question", "status", "answer", "source_hashes"],
+      "properties": {
+        "question": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": ["answered", "unanswered", "unknown", "deferred", "conflicted"]
+        },
+        "answer": { "type": ["string", "null"] },
+        "source_hashes": { "$ref": "#/$defs/hashes" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "answered" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "answer": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "architectureProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recommendation", "cards", "source_state_hash"],
+      "properties": {
+        "recommendation": { "type": "object" },
+        "cards": { "type": "object" },
+        "source_state_hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "relative_path", "content_hash"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "relative_path": { "type": "string", "minLength": 1 },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Specify AI Guardrails"
+  short_description: "Define input, output, tool, and policy controls"
+  default_prompt: "Specify layered guardrails and their executable validation for this AI system."
+policy:
+  allow_implicit_invocation: false

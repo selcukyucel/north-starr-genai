@@ -1,0 +1,6 @@
+interface:
+  display_name: "Invert Requirement"
+  short_description: "Find risks and failure modes before planning"
+  default_prompt: "Invert this requirement and identify realistic failure modes and controls."
+policy:
+  allow_implicit_invocation: false

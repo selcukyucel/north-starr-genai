@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bootstrap North Starr"
+  short_description: "Build compact, evidence-based project context"
+  default_prompt: "Create compact project context without redesigning the system."
+
+policy:
+  allow_implicit_invocation: false

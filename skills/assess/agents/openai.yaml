@@ -1,0 +1,6 @@
+interface:
+  display_name: "Assess AI System Shape"
+  short_description: "Choose the simplest viable solution shape"
+  default_prompt: "Decide whether this needs AI, an agent, or a simpler solution."
+policy:
+  allow_implicit_invocation: true

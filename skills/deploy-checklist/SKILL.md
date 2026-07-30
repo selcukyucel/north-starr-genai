@@ -1,7 +1,6 @@
 ---
 name: deploy-checklist
 description: Pre-deployment verification checklist for AI automations. Verifies evals pass, baselines show no regressions, guardrails are tested, costs are reviewed, monitoring is configured, and rollback plan is documented.
-argument-hint: <deployment name or automation>
 ---
 
 # Deploy Checklist — AI Deployment Verification

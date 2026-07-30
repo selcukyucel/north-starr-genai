@@ -1,7 +1,6 @@
 ---
 name: prompt-test
 description: Run a prompt against a test suite of inputs, score outputs, and compare against baseline. Use for single-run prompt evaluation after changes.
-argument-hint: <prompt name, file path, or eval suite name>
 ---
 
 # Prompt Test — Single-Run Prompt Evaluation
