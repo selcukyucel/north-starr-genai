@@ -73,12 +73,12 @@ TRIAGE → HUMAN:
   act:  format escalation, pause
 
 DESIGN → PLAN:
-  cond: architecture approved + cost within envelope
+  cond: architecture status ACCEPTED + complete named approval + source hashes current + cost within envelope
   act:  dispatch genai-layoutplan
 
 DESIGN → HUMAN:
-  cond: cost > client budget OR conflicting constraints
-  act:  escalate (client=budget, operator=technical)
+  cond: architecture proposal ready OR cost > client budget OR conflicting constraints
+  act:  request named acceptance/rejection or escalate the specific constraint
 
 PLAN → BUILD:
   cond: .plans/PLAN-<name>.md exists + operator approves
@@ -129,7 +129,7 @@ HUMAN → <any>:
 | Budget approval / scope cut | DESIGN | Re-architect with new constraint |
 | Priority call | PLAN | Re-plan with updated capacity |
 | Credentials granted | BUILD | Resume |
-| "Good enough" | DELIVER | Gate override, package |
+| Risk waiver | HARDEN | Allow only non-critical gate waiver with named risk owner, reason, compensating controls, and expiry |
 | "Not good enough" | REWORK | Route with specific feedback |
 
 ## Workflow
@@ -499,11 +499,11 @@ See `.plans/DECISIONS.md` for full log.
 ## Important Rules
 
 1. **Every transition updates PIPELINE-STATUS.md** — no exceptions
-2. **Never skip a gate** — all three HARDEN validators report before proceed
+2. **Never skip a gate** — all three HARDEN validators report before proceed. Privacy, security, compliance, and tenant-isolation failures cannot be overridden.
 3. **Cross-Consult Log is a gate** — every specialist artifact ends with populated `## Cross-Consult Log` citing Required Peer Consultations. Missing log blocks HARDEN → DELIVER, triggers REWORK.
 4. **Never auto-resolve budget conflicts** — always escalate
 5. **Never auto-override human gate** — AWAITING CLIENT moves only on response or SLA breach
-6. **Decisions are global** — one story's decision constrains others unless human overrides
+6. **Accepted decisions are global** — proposals do not constrain implementation. Overrides require a new named human decision and evidence hashes.
 7. **Budget is a pool** — check remaining, not just story's own
 8. **Two rework cycles max** — same gate twice on same issue → escalate, no infinite loop
 9. **Parallel where possible** — BUILD specialists, HARDEN validators concurrent

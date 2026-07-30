@@ -1,0 +1,6 @@
+interface:
+  display_name: "Analyze Code"
+  short_description: "Review code structure, quality, and risks"
+  default_prompt: "Analyze this codebase or change and report evidence-backed findings."
+policy:
+  allow_implicit_invocation: false

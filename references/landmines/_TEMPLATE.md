@@ -1,7 +1,7 @@
 # Landmine: [Landmine Name]
 
 **Severity**: [CRITICAL / HIGH / MEDIUM / LOW — justify with evidence: instance count, affected files, blast radius]
-**Threatens**: [Working / Unique / Simple / Clear / Easy / Developed / Brief — list the virtue(s) this landmine endangers. See `skills/_references/virtues/code-virtues.md`]
+**Threatens**: [Working / Unique / Simple / Clear / Easy / Developed / Brief — list the virtue(s) this landmine endangers. See `references/virtues/code-virtues.md`]
 **Category**: [Threading / Memory / Performance / Logic / Integration / State / Error Handling / Architecture / Security / Testing / Prompt Engineering / RAG / Model Configuration / Guardrails / Cost]
 **Language/Framework**: [Any / specify — must match the project's detected language, never hardcode]
 **Last Updated**: [Date]

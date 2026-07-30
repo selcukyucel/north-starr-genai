@@ -1,0 +1,6 @@
+interface:
+  display_name: "Generate Pull Request"
+  short_description: "Prepare a reviewable pull request description"
+  default_prompt: "Prepare a pull request description for the current branch."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Validate AI Discovery"
+  short_description: "Check evidence before architecture decisions"
+  default_prompt: "Validate this discovery handoff before architecture work."
+policy:
+  allow_implicit_invocation: true

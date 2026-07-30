@@ -1,7 +1,6 @@
 ---
 name: incident-playbook
 description: Generate runbooks for common AI automation failures. Covers model timeouts, hallucination detection, cost spikes, accuracy drops, data pipeline failures, and prompt injection attempts.
-argument-hint: <automation or system name>
 ---
 
 # Incident Playbook — AI Failure Runbook Generator

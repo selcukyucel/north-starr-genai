@@ -1,0 +1,6 @@
+interface:
+  display_name: "Test AI Prompt"
+  short_description: "Score prompt behavior against a baseline"
+  default_prompt: "Run this prompt against its evaluation cases and compare it with the baseline."
+policy:
+  allow_implicit_invocation: false

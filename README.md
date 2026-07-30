@@ -1,382 +1,368 @@
 # North Starr GenAI
 
-**Your North Starr for AI Development** | v0.15.0
+**Evidence-led AI architecture and delivery for Codex** | development version 0.17.0
 
-An agentic AI development agency framework — North Starr plans, designs, validates, and orchestrates while Claude Code writes code in YOUR codebase. Works with any project: RAG pipelines, agent harnesses, multi-agent systems, prompt chains, or AI platform components.
+North Starr turns client discovery into reviewable architecture decisions,
+machine-readable artifacts, and governed implementation plans. Codex is the
+recommended experience. Claude Code and GitHub Copilot remain supported.
 
-## Agent Interaction Map
+The default journey is intentionally small:
 
-```
-                    ┌──────────┐
-                    │ /assess  │ ← classifies project type
-                    └────┬─────┘
-                         │
-                    ┌────┴─────┐
-                    │/discover │ ← elicits requirements (if needed)
-                    └────┬─────┘
-                         │
-                    ┌────┴──────┐
-                    │/decompose │ ← PRD → stories
-                    └────┬──────┘
-                         │
-                  ┌──────┴──────┐
-                  │ ORCHESTRATOR │
-                  └──────┬──────┘
-                         │
-              ┌──────────┴──────────┐
-              │    chief-ai-po      │ TRIAGE
-              └──────────┬──────────┘
-                         │
-              ┌──────────┴──────────┐
-              │    ai-architect     │ DESIGN
-              └────┬──────────┬─────┘
-                   │          │
-         ┌─────────┘          └──────────┐
-         ▼                               ▼
-   ┌──────────┐                 ┌───────────────┐
-   │ ai-invert│                 │cost-estimator │
-   └────┬─────┘                 └───────┬───────┘
-        └───────────────┬───────────────┘
-                        ▼
-                 ┌──────────────────┐
-                 │ genai-layoutplan │ PLAN (tags tasks with specialists)
-                 └────────┬─────────┘
-                        │
-       ┌────────────────┼────────────────┬──────────────┐
-       ▼                ▼                ▼              ▼
-┌────────────┐  ┌────────────┐  ┌───────────────┐ ┌──────────┐
-│  prompt-   │  │   rag-     │  │ integration-  │ │ agentic- │
-│  engineer  │  │  advisor   │  │   planner     │ │ designer │
-└─────┬──────┘  └─────┬──────┘  └───────┬───────┘ └────┬─────┘
-      └───────────────┼─────────────────┼───────────────┘
-                      ▼ BUILD
-        ┌─────────────┼──────────────┐
-        ▼             ▼              ▼
-┌────────────┐ ┌────────────┐ ┌───────────┐
-│   eval-    │ │ guardrails-│ │  ai-ops   │
-│  designer  │ │  designer  │ │ (monitor) │
-└─────┬──────┘ └──────┬─────┘ └─────┬─────┘
-      │          ┌────┴─────┐       │
-      │          │  prompt- │       │
-      │          │adversary │       │
-      │          └──────────┘       │
-      └───────────────┼────────────┘
-                      ▼ HARDEN
-               ┌────────────┐
-               │demo-builder│ DELIVER
-               └────────────┘
-
-Feedback loops:
-  eval fails ──→ prompt-engineer (fix prompt)
-  guardrails fail ──→ ai-architect (fix design)
-  cost overrun ──→ ai-architect (cheaper model)
-  same gate fails twice ──→ HUMAN escalation
+```text
+$north-starr-genai:intake
+   ↓
+$north-starr-genai:assess
+   ↓
+$north-starr-genai:architecture-design
+   ↓
+named human acceptance
+   ↓
+$north-starr-genai:decompose → $north-starr-genai:orchestrate
 ```
 
-## What It Does
+The first three stages produce a proposal. They do not silently approve a
+design or authorize implementation.
 
-North Starr GenAI is the **brain** of an AI development agency. It doesn't generate code — it generates the specs, designs, evaluations, and guardrails that make AI code production-grade.
+## Why North Starr
 
+AI architecture fails when polished assumptions are mistaken for client facts,
+or when a model, SDK, RAG pipeline, or multi-agent system is selected before the
+problem is understood. North Starr keeps those decisions explicit:
+
+- validates Vignola handoffs, discovery exports, transcripts, briefs, and PRDs;
+- separates confirmed facts, inferences, assumptions, unknowns, deferred items,
+  and conflicts;
+- considers no-build, configuration, buy, and deterministic software before AI;
+- selects the simplest viable shape: bounded AI component, prompt chain,
+  governed workflow, bounded agent loop, or justified multi-agent system;
+- records MCP servers and tools as concrete security and operations contracts;
+- treats exact model selection as `benchmark_required` and unresolved library
+  selection as `spike_required`;
+- defines evaluation, human authority, observability, rollback, and residual
+  risk before implementation;
+- preserves source hashes so changed evidence marks downstream work stale.
+
+## Codex installation (recommended)
+
+North Starr is packaged as a Codex plugin in `.codex-plugin/plugin.json`. The
+plugin exposes all 26 skills and lightweight routing hooks.
+
+For this development checkout, install it from the configured personal
+marketplace:
+
+```bash
+codex plugin add north-starr-genai@personal
 ```
-CLIENT (you) → gives requirement
-NORTH STARR (brain) → plans, designs, validates, orchestrates, quality-gates
-CLAUDE CODE (hands) → reads North Starr's specs + writes code in YOUR codebase
-/genai-bootstrap → makes Claude Code aware of your specific codebase patterns
+
+Codex discovers the default personal marketplace automatically from
+`~/.agents/plugins/marketplace.json`; do not add it again. For a different
+local marketplace, add the root that contains its marketplace file, then
+install with that marketplace name:
+
+```bash
+codex plugin marketplace add <path-to-marketplace-root>
+codex plugin add north-starr-genai@<marketplace-name>
 ```
 
-### The Pipeline
+You can also open **Plugins** in the Codex desktop app and install North Starr
+from that marketplace. Review and trust the bundled hooks when prompted, then
+start a new Codex task so the skills are loaded.
 
-```
-Requirement → /assess (classify project type)
-           → /discover (elicit requirements if needed)
-           → /decompose (PRD → stories with AI safety criteria)
-           → /orchestrate (start the pipeline)
-             → TRIAGE: chief-ai-po refines story
-             → DESIGN: ai-architect → ADR + cost envelope
-             → PLAN: genai-layoutplan → tasks with specialist tags
-             → BUILD: specialists produce specs → Claude Code implements
-             → HARDEN: eval + guardrails + ops validate (ALL must pass)
-             → DELIVER: demo-builder packages for client
+Verify the installation:
+
+```bash
+codex plugin list --json
 ```
 
-### The AI Complexity Gate
+For a project-local fallback, including Codex surfaces where plugins are not
+loaded, install the same skills into the project:
 
-Before ANY code change, the gate catches AI-specific risks:
+```bash
+north-starr-genai codex-init /path/to/project
+```
 
-| # | Question | Why |
-|---|----------|-----|
-| Q0 | Is current behavior covered by evals? | Eval-first discipline |
-| Q1 | Does this touch a production prompt or model config? | Prompt changes are high-risk |
-| Q2 | Does this change what data the model sees? | Data changes alter model behavior |
-| Q3 | Does this affect a client-facing output? | Client-visible changes need baselines |
-| Q4 | Could this change cost at scale? | Cost is a first-class concern |
+This creates `.agents/skills/`, shared `.agents/references/`, and a compact
+`AGENTS.md` without copying the legacy 18-agent workflow into every task.
+Project-local skills use unqualified names such as `$intake`; plugin skills use
+qualified names such as `$north-starr-genai:intake`.
 
-Based on answers, it routes through: **ASSESS** → **BUILD** (specialists auto-spawn) → **HARDEN** (validators auto-run) → **COMPLETE** → **LEARN**.
+## Minimum-complexity workflow
 
-### Routing Hooks (Claude Code only)
+### 1. Validate discovery evidence
 
-The plugin ships two hooks that fire automatically:
+Start with a Vignola North Starr handoff or another discovery artifact:
 
-- **UserPromptSubmit hook** — Scans every prompt for AI keywords (prompt, eval, RAG, guardrail, cost, model, injection, drift, observability, integration, etc.). On match, injects a Routing Directive naming the required specialist agents. Fast-path prompts (config change, typo, docs, trivial one-line fix) produce no output.
-- **PreToolUse hook** — Fires on `Write`/`Edit`/`NotebookEdit` targeting specialist-owned `.plans/` paths (`PROMPTS-*`, `RAG-*`, `EVAL-*`, `COST-*`, `ADR-*`, `GUARDRAILS-*`, `INTEGRATION-*`, `OPS-*`, `INVERT-*`, `BASELINE-*`, etc.). Injects a reminder that the path is owned by a specialist — the main conversation should delegate via the Agent tool, not write directly.
+```text
+$north-starr-genai:intake /path/to/north-starr-handoff.json
+```
 
-Hooks auto-register when `/plugin install north-starr-genai` runs. VS Code Copilot has no equivalent hook mechanism; the same policy travels via the managed `Delegation Policy` section in `AGENTS.md`.
+`$north-starr-genai:intake` checks structure and provenance, preserves MCP/tool
+mentions, and asks no more than three decision-blocking follow-ups. It writes:
 
-### Delegation Policy (MUST)
+```text
+.north-starr/intake-validation.json
+.north-starr/intake-validation.md
+```
 
-Every AI-touching domain has an owner:
+Six resolved client prompts can support a provisional intake. Twelve are
+recommended. `unknown` and `deferred` are valid answers and remain visible.
 
-| Domain | Specialist Agent |
+### 2. Decide whether AI is justified
+
+```text
+$north-starr-genai:assess .north-starr/intake-validation.json
+```
+
+`$north-starr-genai:assess` considers no-build, process/configuration, buy, and
+deterministic software before recommending an AI shape. It writes:
+
+```text
+.north-starr/assessment.json
+.north-starr/assessment.md
+```
+
+### 3. Create the architecture proposal
+
+```text
+$north-starr-genai:architecture-design .north-starr/intake-validation.json .north-starr/assessment.json
+```
+
+The design is organized into six plain-language cards:
+
+1. Goal and scope
+2. System shape
+3. Information and tools
+4. Human control
+5. Quality and operations
+6. Runtime and technology stack
+
+The skill writes:
+
+```text
+.north-starr/architecture-proposal.json
+.north-starr/architecture-proposal.md
+.north-starr/technology-stack.json
+.north-starr/tool-registry.json
+.north-starr/manifest.json
+```
+
+### 4. Accept the proposal deliberately
+
+Architecture begins with status `proposed`. A named human must review it and
+record acceptance with:
+
+- approver name and timestamp;
+- accepted scope and current evidence hashes;
+- residual-risk owner;
+- conditions or expiry, when applicable.
+
+Only an `accepted` architecture with current source hashes may become
+implementation work. A proposal is not accepted merely because a skill
+completed successfully.
+
+### 5. Plan and execute
+
+After acceptance:
+
+```text
+$north-starr-genai:decompose .north-starr/architecture-proposal.json
+$north-starr-genai:orchestrate
+```
+
+Use `$north-starr-genai:decompose` to turn the accepted scope into stories. Use
+`$north-starr-genai:orchestrate` when those stories are ready for governed
+execution.
+
+## Machine-readable architecture workspace
+
+North Starr writes human-readable Markdown and versioned JSON side by side in
+`.north-starr/`.
+
+- JSON is the canonical machine-readable artifact.
+- Markdown is the concise review view of the same decision.
+- `manifest.json` links artifacts to source hashes.
+- Changed discovery evidence makes dependent assessment and design artifacts
+  stale.
+- Architecture status follows
+  `draft/proposed → accepted/rejected/superseded`.
+- Only a named human can create acceptance or implementation authority.
+
+The repository includes schemas and a dependency-free validator:
+
+```bash
+python3 scripts/validate_artifacts.py repo .
+python3 scripts/validate_artifacts.py handoff /path/to/north-starr-handoff.json
+python3 scripts/validate_artifacts.py bundle /path/to/vignola-export-directory
+python3 scripts/validate_artifacts.py manifest .north-starr/manifest.json
+```
+
+## How technology choices are made
+
+North Starr records separate decisions for:
+
+- host language, runtime, and deployment environment;
+- model-provider API client;
+- structured-output and validation library;
+- agent or workflow SDK category;
+- durable workflow or graph runtime;
+- MCP client/server integration;
+- evaluation, tracing, secrets, and persistence.
+
+An agent SDK is not the default. The design compares:
+
+| Category | Use when |
 |---|---|
-| Prompt design, CoT, few-shot | `prompt-engineer` |
-| Evals, rubrics, regression tests | `eval-designer` |
-| Baseline capture | `baseline-capturer` |
-| RAG, retrieval, embeddings | `rag-advisor` |
-| Guardrails, injection, PII, compliance | `guardrails-designer` |
-| Red-teaming, adversarial prompts | `prompt-adversary` |
-| Cost, token budget, tier routing | `cost-estimator` |
-| Architecture, model selection, ADRs | `ai-architect` |
-| Monitoring, drift, SLA, alerts | `ai-ops` |
-| External APIs, auth, retry | `integration-planner` |
-| Inversion, failure modes | `ai-invert-analyst` |
-| UI/UX for AI interfaces | `agentic-designer` |
-| Planning from inversion | `genai-layoutplan` |
-| PRD → stories | `genai-storymap` / `chief-ai-po` |
+| `no_agent_sdk` | One bounded call or a small deterministic workflow is enough |
+| `provider_sdk` | Provider-specific capabilities have measured value |
+| `portable_ai_sdk` | Portability and typed model/tool calls matter |
+| `agent_sdk` | A bounded tool loop, handoffs, or built-in tracing add measured value |
+| `durable_workflow_runtime` | Long-running work needs resumability, timers, or approvals |
+| `graph_runtime` | Dynamic graph state and checkpoints materially simplify the workflow |
 
-The main conversation MUST delegate to the specialist — invoke via the Agent tool, cite its output path in a `Cross-Consult Log`, and never write to its owned `.plans/` directory directly. Every specialist report MUST end with a populated `## Cross-Consult Log` citing peer agents consulted; the orchestrator flags reports with a missing log as incomplete at HARDEN → DELIVER.
+Candidates are verified against current primary documentation and a small
+capability spike. Models are benchmarked on representative gold cases rather
+than chosen from preference or an undated pricing table.
 
-## Installation
+## Skills (26)
 
-> **Which option?** Use **Option A** if you work in Claude Code — all 24 skills, 18 agents, and 2 routing hooks load directly into your session, no file generation needed. Use **Option B + C** if you work in VS Code with GitHub Copilot — the CLI generates project files that Copilot reads. (Hooks are a Claude Code–only feature; Copilot users get the same routing policy via the managed section in AGENTS.md.)
+Plugin skills use `$north-starr-genai:skill-name` in Codex. Project-local
+skills use `$skill-name`. Claude Code uses the equivalent `/skill-name` syntax.
 
-### Option A: Claude Code Plugin (recommended)
+### Discovery and architecture
 
-```
+| Skill | Purpose |
+|---|---|
+| `intake` | Validate discovery evidence and produce a trusted intake |
+| `discover` | Run the separate 12-question client discovery spine |
+| `assess` | Test AI necessity and recommend the simplest system shape |
+| `architecture-design` | Produce the six-card architecture and technology proposal |
+| `decompose` | Convert an accepted PRD or architecture scope into stories |
+| `orchestrate` | Execute accepted stories through governed delivery |
+| `genai-bootstrap` | Capture project context and North Starr conventions |
+| `genai-sync` | Refresh managed North Starr project instructions |
+
+### Risk, quality, and operations
+
+| Skill | Purpose |
+|---|---|
+| `ai-invert` | Analyze AI-specific failure modes |
+| `genai-invert` | Run general inversion analysis |
+| `baseline` | Capture a reproducible pre-change baseline |
+| `cost-estimate` | Build a scale-aware cost envelope |
+| `eval-suite` | Design statistical and model-graded evaluations |
+| `ai-test` | Generate deterministic tests for structured AI outputs |
+| `prompt-test` | Test prompt behavior and regressions |
+| `guardrail-spec` | Specify input, output, tool, and policy controls |
+| `deploy-checklist` | Produce an AI-aware release checklist |
+| `incident-playbook` | Define response, degradation, rollback, and recovery |
+| `prompt-version` | Version prompts and their evaluation evidence |
+| `autoimprove` | Optimize against explicit evaluations |
+
+### Engineering and delivery
+
+| Skill | Purpose |
+|---|---|
+| `analyze-code` | Analyze implementation and architecture context |
+| `generate-commit` | Prepare an intentional commit description |
+| `generate-pr` | Prepare a pull request description |
+| `handoff-doc` | Create a delivery or operational handoff |
+| `learn` | Record reusable project learning |
+| `report-weekly` | Summarize progress, risks, and decisions |
+
+## Specialist prompts
+
+The repository retains 18 legacy specialist prompts in `agents/` and matching
+Claude Code/Copilot templates. They cover product, architecture, retrieval,
+prompts, evaluation, guardrails, adversarial testing, cost, integrations,
+operations, UX, and delivery.
+
+Codex users normally enter through the skills above. North Starr may use a
+small number of relevant subagents when parallel work adds value; it does not
+force all 18 specialists into every engagement. The legacy prompts remain for
+compatibility and detailed advanced workflows.
+
+## Claude Code compatibility
+
+Install the Claude Code plugin:
+
+```text
 /plugin marketplace add selcukyucel/north-starr-genai
 /plugin install north-starr-genai
 ```
 
-This immediately makes all 24 skills (e.g. `/assess`, `/decompose`, `/orchestrate`), 18 agents, and 2 routing hooks available in your Claude Code session. No files are added to your project — the plugin lives in `~/.claude/plugins/`. The hooks fire automatically on every prompt and every AI-artifact write, enforcing specialist delegation.
+This loads the same 26 skills using slash commands, the 18 specialist prompts,
+and the Claude-specific routing hooks. Start with:
 
-Then run `/genai-bootstrap` in your project to generate a `CLAUDE.md` with your codebase's tech stack, architecture, and module map. This lets North Starr tailor its output to your specific project.
-
-**Update:**
+```text
+/intake /path/to/north-starr-handoff.json
+/assess .north-starr/intake-validation.json
+/architecture-design
 ```
+
+To update:
+
+```text
 /plugin marketplace update selcukyucel/north-starr-genai
 /plugin install north-starr-genai
 ```
-After updating, run `north-starr-genai cache-update` if skills don't reflect the latest version, restart Claude Code, and run `/genai-sync` in your existing projects to refresh the managed sections in `CLAUDE.md` and `AGENTS.md`.
 
-**Uninstall:**
-```
-/plugin uninstall north-starr-genai
-/plugin marketplace remove selcukyucel/north-starr-genai
-```
-This removes the plugin from Claude Code. Any `CLAUDE.md` generated by `/genai-bootstrap` stays in your project — delete it manually if you no longer want it.
+## GitHub Copilot compatibility
 
-### Option B: Homebrew
+Install the CLI with Homebrew:
 
 ```bash
 brew tap selcukyucel/north-starr-genai https://github.com/selcukyucel/north-starr-genai.git
 brew install north-starr-genai
 ```
 
-This installs the `north-starr-genai` CLI to your PATH. The CLI is used to initialize and update project files for VS Code Copilot (see Option C). It does not add skills to Claude Code — use Option A for that.
-
-**Update:**
-```bash
-brew upgrade north-starr-genai
-```
-
-**Uninstall:**
-```bash
-brew uninstall north-starr-genai
-brew untap selcukyucel/north-starr-genai
-```
-
-### Option C: VS Code Copilot
-
-After installing the CLI via Homebrew (Option B), run in your project directory:
+Initialize a project:
 
 ```bash
+cd <your-project>
 north-starr-genai init
 ```
 
-This copies skills, agents, and instruction templates into your project:
-- `.github/agents/` — agent definitions for Copilot
-- `.github/skills/` — skill definitions
-- `.github/instructions/` — pattern and landmine rules
-- `AGENTS.md` — workflow gates and specialist dispatch instructions
+This installs Copilot-compatible assets:
 
-These files give VS Code Copilot the same AI complexity gate and specialist dispatch workflow that Claude Code gets from the plugin.
+- `.github/agents/`
+- `.github/skills/`
+- `.github/instructions/`
+- `AGENTS.md`
 
-**Update:**
+Update them with:
+
 ```bash
 north-starr-genai update
 ```
-Preserves your project-specific configuration while updating skill and agent definitions.
 
-**Uninstall:** Remove the generated files from your project:
-```bash
-rm -rf .github/agents/ .github/skills/ .github/instructions/
-rm AGENTS.md
+Copilot does not use the Codex or Claude hook runtimes. The same governance
+travels through the generated `AGENTS.md` and skill instructions.
+
+## Repository layout
+
+```text
+.codex-plugin/         Codex plugin manifest
+.claude-plugin/        Claude Code plugin and marketplace manifests
+skills/                26 reusable workflows
+agents/                18 legacy specialist prompts
+hooks/                 Codex and Claude routing hooks
+schemas/               Versioned machine-readable artifact contracts
+scripts/               Artifact validation and maintenance tools
+templates/             Codex, Claude Code, and GitHub Copilot project templates
+references/            Shared pattern, landmine, and code-virtue references
+tests/                 Artifact and hook regression tests
+bin/                   north-starr-genai CLI
 ```
 
-## Quick Start
+## Design principles
 
-1. **Bootstrap your codebase** (once per project):
-   ```
-   /genai-bootstrap
-   ```
-
-2. **Start building** — pick your entry point:
-
-   | You have... | Run | What happens |
-   |---|---|---|
-   | A vague problem | `/discover` | Structured questions → PRD |
-   | A raw requirement | `/assess` | Classifies project type → recommends approach |
-   | A PRD or spec | `/decompose` | Epics + stories with AI safety criteria |
-   | Stories ready | `/orchestrate` | Full pipeline: TRIAGE → DELIVER |
-   | A single task | Just describe it | Complexity gate routes automatically |
-
-## Skills (24)
-
-### Discovery & Planning
-
-| Skill | Purpose |
-|-------|---------|
-| `/assess` | **NEW** Classify project type, recommend approach, map agent activation, estimate complexity, flag risks |
-| `/discover` | **NEW** Elicit requirements from raw problem statements — structured questions, need reframing, PRD generation |
-| `/decompose` | Break PRDs into epics and user stories (routes to `/assess` or `/discover` if input is too raw) |
-| `/orchestrate` | Start the multi-story pipeline with BUILD Dispatch Protocol, budget preview, resume support |
-| `/genai-bootstrap` | Generate AI tool config from codebase — detects AI stack, generates rules, installs all 15 agents |
-
-### Analysis & Estimation
-
-| Skill | Purpose |
-|-------|---------|
-| `/ai-invert` | AI-specific risk analysis — 10 dimensions, NEW/PRE-EXISTING/AMPLIFIED classification |
-| `/baseline` | Capture AI system performance — measurement methods, regression thresholds |
-| `/cost-estimate` | Token cost projection — per-component breakdown, model comparison, 1x/10x/100x scale |
-| `/genai-invert` | Standard inversion analysis (for non-AI code in AI projects) |
-
-### Evaluation & Safety
-
-| Skill | Purpose |
-|-------|---------|
-| `/eval-suite` | Generate evaluation datasets — golden examples with exact expected outputs, adversarial inputs, regression anchors, AI-scorable vs human-required criterion tagging |
-| `/ai-test` | **NEW** Generate executable pytest files for deterministic AI outputs — assertion-based tests for classification, extraction, routing; CI/CD ready; complements `/eval-suite` for structured outputs |
-| `/prompt-test` | Single-run prompt evaluation — non-deterministic handling, pattern-specific fix suggestions |
-| `/guardrail-spec` | Generate guardrail specs — pipeline-stage scoped, PII/secrets detection, bias detection, relevance checking, code security scanning, false positive estimation, testable criteria |
-
-### Operations & Delivery
-
-| Skill | Purpose |
-|-------|---------|
-| `/deploy-checklist` | Pre-deployment verification — risk mitigation mapping, staging/prod diff |
-| `/incident-playbook` | AI failure runbooks — escalation chains, blast radius, detection commands |
-| `/handoff-doc` | Client documentation — monitoring ranges, SLA numbers, prompt safety rationale |
-| `/prompt-version` | Prompt version tracking — diffs, scores, rollback, changelog |
-
-### Utilities
-
-| Skill | Purpose |
-|-------|---------|
-| `/learn` | Capture learnings (extended with 7 AI-specific triggers) |
-| `/genai-sync` | Inject managed sections after plugin update |
-| `/generate-commit` | Generate commit messages from staged changes |
-| `/generate-pr` | Generate PR descriptions from branch diffs |
-| `/analyze-code` | Find refactoring opportunities and code smells |
-| `/report-weekly` | Generate weekly commit reports |
-| `/autoimprove` | Autonomously optimize skill prompts via measure-change-test loop |
-
-## Agents (18)
-
-### Planning & Decomposition
-| Agent | Purpose |
-|-------|---------|
-| `chief-ai-po` | AI product owner — 3 modes: decompose (PRD → stories with inverted failure modes + 6 mandatory safety stories), refine (TRIAGE enrichment with threshold heuristics), incorporate-feedback (targeted revision from eval failures) |
-| `genai-layoutplan` | Implementation plans from inversion analysis — self-contained task descriptions, specialist tags with domain-specific input, risk-to-task verification |
-| `genai-storymap` | Decompose PRDs into prioritized user stories |
-
-### Analysis (new in v0.15.0)
-| Agent | Purpose |
-|-------|---------|
-| `ai-invert-analyst` | AI risk inversion — 10 dimensions, adversarial examples tailored to the target, NEW/PRE-EXISTING/AMPLIFIED classification. Spawned by `/ai-invert` on Q1/Q2 gate hits. |
-| `baseline-capturer` | Reproducible performance snapshot before changes — accuracy, latency, token usage, cost, error rate, format compliance, with exact reproduction commands. Spawned by `/baseline` on Q3 gate hits. |
-| `auto-improver` | Hill-climbing prompt optimization — one small change per round, keep improvements, revert regressions. Spawned by `/autoimprove`. |
-
-### Orchestration
-| Agent | Purpose |
-|-------|---------|
-| `orchestrator` | Pipeline state machine — BUILD Dispatch Protocol (specialist payloads, RAG→Prompt ordering, completion tracking), multi-failure HARDEN dispatch with severity ranking, architecture divergence constraint injection |
-| `ai-architect` | Technical design — reference pricing table, quantified alternatives, multi-agent topology patterns, fine-tuning decision ladder, REWORK handling with targeted ADR revisions |
-| `cost-estimator` | Cost projection (estimation mode) and optimization analysis (analysis mode) |
-
-### Build Specialists
-| Agent | Purpose |
-|-------|---------|
-| `prompt-engineer` | Prompt design — pattern rationale with rejected alternatives, token budget derivation, domain-realistic eval handoff |
-| `rag-advisor` | RAG pipeline design — data ingestion pipeline, multimodal handling, contextual retrieval (pre-embedding enrichment), corpus-to-chunking decision table, self-query (LLM metadata filter extraction), multi-hop iterative retrieval, Context Injection Contract, cost derivation formulas, project-specific risk derivation |
-| `integration-planner` | External system integration — API contracts, circuit breakers, credential escalation |
-| `agentic-designer` | **NEW** AI-powered UI/UX — confidence thresholds by interface type, typed data contracts, actionable error recovery, AI-specific edge case derivation |
-
-### Validation
-| Agent | Purpose |
-|-------|---------|
-| `eval-designer` | Eval suite execution — golden examples with exact expected outputs, statistical significance rules, AI vs human annotation scoring method selection, inter-annotator agreement, actual model outputs in feedback |
-| `guardrails-designer` | Safety validation — project-specific synthetic PII/secrets, bias detection, relevance checking, code security scanning, blast radius with downstream system names, prompt-adversary delegation, retrieval security |
-| `prompt-adversary` | Red-teaming — targeted weakness per attack, multi-step chained attacks, implementation-specific recommendations |
-| `ai-ops` | Monitoring, alerting, drift detection — tracing & instrumentation design, RAG-specific metrics, cost projection, runbook references |
-
-### Delivery
-| Agent | Purpose |
-|-------|---------|
-| `demo-builder` | Client delivery packaging, UAT instructions, acceptance gate |
-
-## Architecture
-
-### Project Type Adaptation
-
-`/assess` classifies the project and activates only the agents needed:
-
-| Project Type | Key Agents | Skipped |
-|---|---|---|
-| Automation Pipeline | prompt-engineer, eval-designer | rag-advisor (unless KB needed) |
-| Agent Harness | ALL agents active | — |
-| Multi-Agent System | ai-architect (topology patterns critical) | — |
-| RAG Application | rag-advisor (critical), prompt-engineer | — |
-| Prompt Chain | prompt-engineer (per-stage) | rag-advisor |
-| AI OS Component | guardrails-designer (critical), ai-ops (critical) | — |
-
-### BUILD Dispatch Protocol
-
-The orchestrator dispatches specialists with explicit payloads:
-1. Parses plan tasks for `**Specialists needed:**` tags
-2. Dispatches each specialist with story context, task list, output path, and constraints
-3. Enforces RAG → Prompt sequential order (rag-advisor produces Context Injection Contract first)
-4. Tracks specialist completion in PIPELINE-STATUS.md
-5. Signals implementation start when all specialists are done
-
-## CLI
-
-```bash
-north-starr-genai init [dir]      # Install skills in a project
-north-starr-genai update [dir]    # Update skills (preserves config)
-north-starr-genai status [dir]    # Check setup status
-north-starr-genai cache-update    # Refresh Claude Code plugin cache
-north-starr-genai version         # Show version
-north-starr-genai help            # Show help
-```
-
-## Relationship to North Starr
-
-Two products, one philosophy, same community.
-
-- **[North Starr](https://github.com/selcukyucel/north-starr)** — for traditional software development
-- **North Starr GenAI** — for AI automations (RAG, agents, prompt chains, LLM integrations)
-
-North Starr GenAI inherits the core workflow shape (gate → analyze → plan → build → verify → learn) but replaces the content of each step with AI-specific concerns. `/genai-bootstrap` generates the codebase-aware configuration — North Starr itself is codebase-agnostic.
+1. Evidence before architecture.
+2. The simplest adequate system wins.
+3. Tools and MCP servers are governed interfaces, not product-name assumptions.
+4. Models are benchmarked; SDKs are justified by capability spikes.
+5. Human authority is explicit.
+6. Evaluation, observability, security, and rollback are architecture.
+7. Machine-readable artifacts remain traceable to their sources.
 
 ## License
 

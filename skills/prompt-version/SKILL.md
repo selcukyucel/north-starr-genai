@@ -1,7 +1,6 @@
 ---
 name: prompt-version
 description: Track prompt iterations with diffs, scores, and rollback capability. Version control for prompts — the "source code" of AI automations.
-argument-hint: <prompt name>
 ---
 
 # Prompt Version — Prompt Version Tracking

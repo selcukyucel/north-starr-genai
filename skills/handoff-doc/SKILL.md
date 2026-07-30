@@ -1,7 +1,6 @@
 ---
 name: handoff-doc
 description: Generate client-facing documentation for completed AI automations. Includes system overview, architecture diagram, monitoring guide, prompt modification guide, escalation procedures, and SLA summary.
-argument-hint: <automation or project name>
 ---
 
 # Handoff Doc — Client Handoff Documentation

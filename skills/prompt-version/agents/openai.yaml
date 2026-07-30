@@ -1,0 +1,6 @@
+interface:
+  display_name: "Version AI Prompt"
+  short_description: "Track prompt changes, scores, and rollback"
+  default_prompt: "Version this prompt with its diff, evaluation evidence, and rollback information."
+policy:
+  allow_implicit_invocation: false

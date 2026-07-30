@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/selcukyucel/north-starr-genai/schemas/assessment.schema.json",
+  "title": "North Starr system assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "engagement_id",
+    "generated_at",
+    "status",
+    "source_hashes",
+    "problem_summary",
+    "recommended_shape",
+    "build_strategy",
+    "alternatives",
+    "required_specialists",
+    "risks",
+    "assumptions",
+    "blocking_questions",
+    "model_selection_status",
+    "human_boundary"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "artifact_type": { "const": "assessment" },
+    "engagement_id": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["provisional", "ready", "stale"] },
+    "source_hashes": { "$ref": "#/$defs/hashes" },
+    "problem_summary": { "type": "string", "minLength": 1 },
+    "recommended_shape": { "$ref": "#/$defs/shape" },
+    "build_strategy": {
+      "enum": ["no_build", "configure", "buy", "build", "hybrid", "decision_required"]
+    },
+    "alternatives": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["shape", "disposition", "rationale", "evidence_refs"],
+        "properties": {
+          "shape": { "$ref": "#/$defs/shape" },
+          "disposition": { "enum": ["candidate", "rejected", "conditional"] },
+          "rationale": { "type": "string", "minLength": 1 },
+          "evidence_refs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+        }
+      }
+    },
+    "required_specialists": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "blocking_questions": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "model_selection_status": { "const": "benchmark_required" },
+    "human_boundary": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "hashes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+      "uniqueItems": true
+    },
+    "shape": {
+      "enum": [
+        "no_change_or_no_build",
+        "process_or_configuration",
+        "buy_or_managed_capability",
+        "deterministic_software",
+        "deterministic_workflow_with_one_ai_component",
+        "prompt_chain",
+        "governed_workflow",
+        "bounded_agent_loop",
+        "multi_agent"
+      ]
+    }
+  }
+}

@@ -13,11 +13,55 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validation dependencies
+        run: python3 -m pip install 'jsonschema>=4.20,<5' 'PyYAML>=6,<7'
+
       - name: CLI runs
         run: |
           chmod +x bin/north-starr-genai
           bin/north-starr-genai version
           bin/north-starr-genai help
+          bash -n bin/north-starr-genai
+
+      - name: Codex plugin, hooks, and schemas validate
+        run: |
+          python3 scripts/validate_artifacts.py repo .
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import yaml
+          from jsonschema import Draft202012Validator
+
+          for path in sorted(Path(".codex-plugin").glob("*.json")):
+              json.loads(path.read_text())
+          json.loads(Path("hooks/hooks.json").read_text())
+          for path in sorted(Path("schemas").glob("*.schema.json")):
+              value = json.loads(path.read_text())
+              assert value["$schema"] == "https://json-schema.org/draft/2020-12/schema", path
+              Draft202012Validator.check_schema(value)
+          for path in sorted(Path("skills").glob("*/agents/openai.yaml")):
+              value = yaml.safe_load(path.read_text())
+              assert isinstance(value, dict) and "interface" in value, path
+              assert isinstance(value.get("policy", {}).get("allow_implicit_invocation"), bool), path
+              description = value["interface"]["short_description"]
+              assert 25 <= len(description) <= 64, path
+          assert len(list(Path("skills").glob("*/agents/openai.yaml"))) == len(
+              list(Path("skills").glob("*/SKILL.md"))
+          )
+          print("Plugin, hooks, and schemas parse")
+          PY
+          bash -n hooks/codex-user-prompt-submit.sh
+          bash -n hooks/codex-pre-tool-use-ai-artifacts.sh
+
+      - name: Unit and hook tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_*.py' -v
+          tests/test_codex_hooks.sh
 
       - name: Skills have valid frontmatter
         run: |
@@ -47,12 +91,28 @@ jobs:
           done
           [ $errors -eq 0 ] && echo "All marketplace paths valid" || exit 1
 
+      - name: Canonical and Claude agent templates match
+        run: |
+          errors=0
+          for agent in agents/*.md; do
+            name=$(basename "$agent")
+            if [ ! -f "templates/claude/agents/$name" ]; then
+              echo "ERROR: missing Claude template for $name"
+              errors=$((errors + 1))
+            elif ! cmp -s "$agent" "templates/claude/agents/$name"; then
+              echo "ERROR: canonical and Claude template differ for $name"
+              errors=$((errors + 1))
+            fi
+          done
+          [ $errors -eq 0 ] && echo "Canonical agent templates match" || exit 1
+
       - name: Agent templates exist
         run: |
           test -f templates/claude/agents/genai-layoutplan.md || { echo "ERROR: Claude Code genai-layoutplan agent missing"; exit 1; }
           test -f templates/github/agents/genai-layoutplan.agent.md || { echo "ERROR: Copilot genai-layoutplan agent missing"; exit 1; }
           test -f templates/CLAUDE.md || { echo "ERROR: CLAUDE.md template missing"; exit 1; }
           test -f templates/AGENTS.md || { echo "ERROR: AGENTS.md template missing"; exit 1; }
+          test -f templates/codex/AGENTS.md || { echo "ERROR: compact Codex AGENTS.md template missing"; exit 1; }
           echo "All templates valid"
 
       - name: No placeholder SHA in Formula (on main only)

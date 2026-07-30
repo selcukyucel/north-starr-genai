@@ -1,0 +1,6 @@
+interface:
+  display_name: "Estimate AI Cost"
+  short_description: "Quantify cost per outcome and at scale"
+  default_prompt: "Estimate the cost of this AI design at representative usage levels."
+policy:
+  allow_implicit_invocation: false

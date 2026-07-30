@@ -9,6 +9,7 @@ class NorthStarrGenai < Formula
     bin.install "bin/north-starr-genai"
     (share/"north-starr-genai").install "templates"
     (share/"north-starr-genai").install "skills"
+    (share/"north-starr-genai").install "references" if File.directory?("references")
   end
 
   test do

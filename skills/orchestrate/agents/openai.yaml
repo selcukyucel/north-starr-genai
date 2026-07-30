@@ -1,0 +1,7 @@
+interface:
+  display_name: "Orchestrate Accepted Design"
+  short_description: "Deliver an accepted, current AI design"
+  default_prompt: "Orchestrate only after validating named human acceptance and current source hashes."
+
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Check AI Deployment"
+  short_description: "Verify release readiness and rollback"
+  default_prompt: "Check this AI release for evaluation, safety, cost, operations, and rollback readiness."
+policy:
+  allow_implicit_invocation: false

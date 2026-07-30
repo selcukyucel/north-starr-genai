@@ -1,0 +1,6 @@
+interface:
+  display_name: "Generate Commit"
+  short_description: "Prepare an intentional commit message"
+  default_prompt: "Prepare a concise commit message for the current changes."
+policy:
+  allow_implicit_invocation: false

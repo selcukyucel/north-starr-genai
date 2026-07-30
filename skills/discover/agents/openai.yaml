@@ -1,0 +1,6 @@
+interface:
+  display_name: "Run Client Discovery"
+  short_description: "Ask 12 simple evidence-led questions"
+  default_prompt: "Run a simple client discovery meeting one question at a time."
+policy:
+  allow_implicit_invocation: true

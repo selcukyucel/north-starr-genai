@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/selcukyucel/north-starr-genai/schemas/artifact-manifest.schema.json",
+  "title": "North Starr artifact manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "engagement_id",
+    "generated_at",
+    "source_artifacts",
+    "artifacts",
+    "stale",
+    "recommended_next_step"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "artifact_type": { "const": "artifact_manifest" },
+    "engagement_id": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "source_artifacts": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+    "artifacts": { "type": "array", "items": { "$ref": "#/$defs/artifact" } },
+    "stale": { "type": "boolean" },
+    "recommended_next_step": { "enum": ["human_review", "benchmark", "spike", "decompose", "none"] }
+  },
+  "$defs": {
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "schema_version", "artifact_type", "status", "depends_on"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "schema_version": { "type": "string", "minLength": 1 },
+        "artifact_type": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "minLength": 1 },
+        "depends_on": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    }
+  }
+}

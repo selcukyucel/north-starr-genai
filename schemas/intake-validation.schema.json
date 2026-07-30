@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/selcukyucel/north-starr-genai/schemas/intake-validation.schema.json",
+  "title": "North Starr intake validation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "engagement_id",
+    "generated_at",
+    "status",
+    "source_artifacts",
+    "facts",
+    "inferences",
+    "assumptions",
+    "unknowns",
+    "deferred",
+    "conflicts",
+    "systems_and_tools",
+    "blocking_questions",
+    "freshness",
+    "human_boundary"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "artifact_type": { "const": "intake_validation" },
+    "engagement_id": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["provisional", "ready", "blocked", "stale"] },
+    "source_artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "role", "evidence_level"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "declared_schema_version": { "type": ["string", "null"] },
+          "role": {
+            "enum": [
+              "client_summary",
+              "architecture_profile",
+              "integration_handoff",
+              "discovery",
+              "transcript",
+              "brief",
+              "prd",
+              "other"
+            ]
+          },
+          "evidence_level": {
+            "enum": [
+              "client_words",
+              "client_confirmed",
+              "architect_interpretation",
+              "system_generated",
+              "mixed",
+              "unknown"
+            ]
+          }
+        }
+      }
+    },
+    "facts": { "$ref": "#/$defs/claims" },
+    "inferences": { "$ref": "#/$defs/claims" },
+    "assumptions": { "$ref": "#/$defs/claims" },
+    "unknowns": { "$ref": "#/$defs/claims" },
+    "deferred": { "$ref": "#/$defs/claims" },
+    "conflicts": { "$ref": "#/$defs/claims" },
+    "systems_and_tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "kind",
+          "capture_status",
+          "evidence_status",
+          "authoritative_owner",
+          "evidence_refs",
+          "missing_details"
+        ],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["application", "api", "database", "mcp_server", "tool", "other"] },
+          "capture_status": { "enum": ["confirmed", "partial", "mentioned", "unknown"] },
+          "evidence_status": {
+            "enum": [
+              "confirmed_fact",
+              "inference",
+              "assumption",
+              "unknown",
+              "conflict"
+            ]
+          },
+          "authoritative_owner": { "type": ["string", "null"] },
+          "evidence_refs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "missing_details": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+        }
+      }
+    },
+    "blocking_questions": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["upstream_hashes", "status", "checked_at"],
+      "properties": {
+        "upstream_hashes": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "uniqueItems": true
+        },
+        "status": { "enum": ["current", "stale", "unknown"] },
+        "checked_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "human_boundary": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_id",
+          "statement",
+          "evidence_refs",
+          "source_kind",
+          "speaker_or_authority"
+        ],
+        "properties": {
+          "claim_id": { "type": "string", "minLength": 1 },
+          "statement": { "type": "string", "minLength": 1 },
+          "evidence_refs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "source_kind": {
+            "enum": [
+              "client_words",
+              "client_confirmation",
+              "transcript",
+              "architect_interpretation",
+              "system_artifact",
+              "external_evidence",
+              "unknown"
+            ]
+          },
+          "speaker_or_authority": { "type": ["string", "null"] },
+          "owner": { "type": ["string", "null"] },
+          "validation_checkpoint": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

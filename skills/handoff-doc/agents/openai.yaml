@@ -1,0 +1,6 @@
+interface:
+  display_name: "Create AI Handoff"
+  short_description: "Document operation, ownership, and support"
+  default_prompt: "Create a concise operational and client handoff for this completed AI system."
+policy:
+  allow_implicit_invocation: false

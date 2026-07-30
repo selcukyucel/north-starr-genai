@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/selcukyucel/north-starr-genai/schemas/discovery.schema.json",
+  "title": "North Starr 12-question discovery",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "engagement_id",
+    "generated_at",
+    "status",
+    "questions",
+    "source_hashes",
+    "human_boundary"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "artifact_type": { "const": "discovery" },
+    "engagement_id": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["provisional", "complete"] },
+    "questions": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "prefixItems": [
+        { "$ref": "#/$defs/q1" },
+        { "$ref": "#/$defs/q2" },
+        { "$ref": "#/$defs/q3" },
+        { "$ref": "#/$defs/q4" },
+        { "$ref": "#/$defs/q5" },
+        { "$ref": "#/$defs/q6" },
+        { "$ref": "#/$defs/q7" },
+        { "$ref": "#/$defs/q8" },
+        { "$ref": "#/$defs/q9" },
+        { "$ref": "#/$defs/q10" },
+        { "$ref": "#/$defs/q11" },
+        { "$ref": "#/$defs/q12" }
+      ],
+      "items": false
+    },
+    "source_hashes": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+      "uniqueItems": true
+    },
+    "human_boundary": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "question_id",
+        "question",
+        "status",
+        "answer",
+        "evidence_refs",
+        "architect_notes"
+      ],
+      "properties": {
+        "question_id": { "type": "string" },
+        "question": { "type": "string" },
+        "status": { "enum": ["answered", "unknown", "deferred"] },
+        "answer": { "type": ["string", "null"] },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "uniqueItems": true
+        },
+        "speaker_or_owner": { "type": ["string", "null"] },
+        "architect_notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "text"],
+            "properties": {
+              "type": { "enum": ["inference", "assumption"] },
+              "text": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "q1": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-001" }, "question": { "const": "What problem are we trying to solve, and who is affected?" } } }] },
+    "q2": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-002" }, "question": { "const": "How is this work handled today, from start to finish?" } } }] },
+    "q3": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-003" }, "question": { "const": "If this succeeds, what should improve, and how would you notice?" } } }] },
+    "q4": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-004" }, "question": { "const": "Who will use, operate, approve, or be affected by the system?" } } }] },
+    "q5": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-005" }, "question": { "const": "What everyday, difficult, and unsafe examples should it handle?" } } }] },
+    "q6": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-006" }, "question": { "const": "What must the first release do, and deliberately leave out?" } } }] },
+    "q7": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-007" }, "question": { "const": "What information and systems are needed, and which sources are authoritative?" } } }] },
+    "q8": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-008" }, "question": { "const": "What may each user see or do, and what must remain out of reach?" } } }] },
+    "q9": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-009" }, "question": { "const": "What could go wrong, what must never happen, and what should happen under uncertainty or failure?" } } }] },
+    "q10": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-010" }, "question": { "const": "What makes a result correct, useful, complete, and testable?" } } }] },
+    "q11": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-011" }, "question": { "const": "What response time, usage, availability, budget, and delivery constraints apply?" } } }] },
+    "q12": { "allOf": [{ "$ref": "#/$defs/base" }, { "properties": { "question_id": { "const": "INTAKE-012" }, "question": { "const": "Who owns the outcome, operation, remaining risk, and authority to stop or restore the service?" } } }] }
+  }
+}

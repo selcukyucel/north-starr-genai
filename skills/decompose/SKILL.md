@@ -1,7 +1,6 @@
 ---
 name: decompose
 description: Decompose a PRD into prioritized, dependency-mapped epics and user stories. Accepts pasted text, file path, or PDF.
-argument-hint: <PRD text, file path, or PDF path>
 ---
 
 # PRD Decomposition — From Document to Backlog

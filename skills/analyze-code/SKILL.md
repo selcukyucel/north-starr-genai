@@ -152,7 +152,9 @@ Beyond checklist items, look for higher-level refactoring opportunities:
 
 ### Step 6.5: Virtue Scorecard
 
-Score the analyzed code against the 7 Code Virtues (see `skills/_references/virtues/code-virtues.md`). This provides a positive quality assessment alongside the issue-based findings.
+Score the analyzed code against the 7 Code Virtues (read
+`../../references/virtues/code-virtues.md`). This provides a positive quality
+assessment alongside the issue-based findings.
 
 **For each virtue, assign 1-5 stars based on evidence:**
 
@@ -411,7 +413,8 @@ This skill uses three reference documents:
    - Universal refactoring strategies (Extract, Move, Replace, Simplify, Introduce)
    - Architecture smell summary
 
-3. **`skills/_references/virtues/code-virtues.md`**: The 7 Code Virtues positive quality framework
+3. **`../../references/virtues/code-virtues.md`**: The 7 Code Virtues positive
+   quality framework
    - Priority-ordered virtues: Working, Unique, Simple, Clear, Easy, Developed, Brief
    - Virtue Scorecard methodology for balanced code assessment
    - Trade-off resolution when virtues conflict

@@ -103,8 +103,8 @@ The ordering isn't about importance — all virtues matter. It's about which to 
 
 Virtues are referenced by the following templates and skills:
 
-- **Pattern rules** (`skills/_references/patterns/_TEMPLATE.md`) — `**Virtues**:` field tags which virtues the pattern serves
-- **Landmine rules** (`skills/_references/landmines/_TEMPLATE.md`) — `**Threatens**:` field tags which virtues the landmine endangers
+- **Pattern rules** (`references/patterns/_TEMPLATE.md`) — `**Virtues**:` field tags which virtues the pattern serves
+- **Landmine rules** (`references/landmines/_TEMPLATE.md`) — `**Threatens**:` field tags which virtues the landmine endangers
 - **`/genai-bootstrap`** — tags every generated pattern and landmine rule with virtues
 - **`/learn`** — tags captured learnings with the virtue they protect
 - **`/analyze-code`** — uses the Virtue Scorecard to rate analyzed code

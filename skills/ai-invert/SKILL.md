@@ -1,7 +1,6 @@
 ---
 name: ai-invert
 description: Run AI-specific inversion analysis on a requirement before implementation. Dispatches the `ai-invert-analyst` agent on a separate thread. Use before complex or high-stakes AI tasks that touch prompts, models, RAG, or AI-powered outputs.
-argument-hint: <requirement or feature description>
 ---
 
 # /ai-invert — Dispatch the AI Inversion Analyst

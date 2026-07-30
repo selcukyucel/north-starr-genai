@@ -1,0 +1,6 @@
+interface:
+  display_name: "Create AI Incident Playbook"
+  short_description: "Define detection, degradation, rollback, and recovery"
+  default_prompt: "Create incident runbooks for this AI system's realistic failure modes."
+policy:
+  allow_implicit_invocation: false

@@ -1,7 +1,6 @@
 ---
 name: autoimprove
 description: Autonomously improve any skill or agent prompt via measure-change-test hill-climbing. Dispatches the `auto-improver` agent on a separate thread. Use when a skill gives inconsistent results, when asked to "improve/optimize/autoresearch" a skill, or when output quality needs iterative tightening.
-argument-hint: <skill or agent name to improve>
 ---
 
 # /autoimprove — Dispatch the Auto-Improver

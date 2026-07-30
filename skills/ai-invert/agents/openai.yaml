@@ -1,0 +1,6 @@
+interface:
+  display_name: "Invert AI Risk"
+  short_description: "Analyze AI failure modes before implementation"
+  default_prompt: "Analyze this AI change by identifying failure modes, controls, and remaining risk."
+policy:
+  allow_implicit_invocation: false

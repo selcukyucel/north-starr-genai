@@ -2,6 +2,49 @@
 
 All notable changes to north-starr-genai will be documented in this file.
 
+## [0.17.0] — 2026-07-30
+
+### Codex-native architecture workflow
+
+- Added a Codex plugin manifest and lightweight Codex hooks, making Codex the
+  recommended North Starr experience while preserving Claude Code and GitHub
+  Copilot compatibility.
+- Added `$intake` as an evidence gate for Vignola handoffs, discovery exports,
+  transcripts, briefs, and PRDs. It separates confirmed facts, inferences,
+  assumptions, unknowns, deferred items, and conflicts and limits blocking
+  follow-ups to three.
+- Added cross-file validation for the standard Vignola client summary,
+  architecture profile, and North Starr handoff export bundle.
+- Reworked discovery around the separate 12-question client spine. Six resolved
+  prompts can support a provisional draft; all 12 are recommended.
+- Added `$architecture-design`, a six-card minimum-complexity architecture
+  workflow covering goal and scope, system shape, information and tools, human
+  control, quality and operations, and runtime/technology decisions.
+- Added explicit no-build, configuration, buy, deterministic software, bounded
+  AI, prompt-chain, workflow, bounded-agent-loop, and justified multi-agent
+  decision paths.
+- Added structured SDK/framework selection. Exact model names remain
+  `benchmark_required`; unresolved library choices remain `spike_required`.
+- Added MCP/tool registry requirements for transport, ownership, authentication,
+  scopes, tenant boundaries, side effects, approvals, retry/idempotency,
+  sanitization, auditing, and contract tests.
+
+### Machine-readable governance
+
+- Added versioned schemas and dependency-free validators for Vignola handoffs,
+  intake, assessments, architecture proposals, technology stacks, tool
+  registries, discovery, project context, and artifact manifests.
+- Architecture now emits paired JSON and Markdown under `.north-starr/`, with
+  source hashes and stale-dependency detection.
+- Formalized the `proposed` versus `accepted` boundary. Only a separate named
+  human action with current evidence hashes, accepted scope, and residual-risk
+  ownership may authorize decomposition or orchestration.
+- Updated the AI architect, integration planner, and orchestrator guidance to
+  preserve MCP evidence, reduce unnecessary multi-agent designs, and prevent
+  unaccepted proposals from entering implementation.
+- North Starr now includes 26 skills and retains 18 legacy specialist prompts
+  for Claude Code, Copilot, and advanced workflows.
+
 ## [0.16.0] — 2026-05-09
 
 ### Token discipline — slice stories, compress peers, cap turns

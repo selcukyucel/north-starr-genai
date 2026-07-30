@@ -1,0 +1,6 @@
+interface:
+  display_name: "Capture AI Baseline"
+  short_description: "Record reproducible behavior before a change"
+  default_prompt: "Capture a reproducible pre-change baseline for this AI component."
+policy:
+  allow_implicit_invocation: false

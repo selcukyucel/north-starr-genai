@@ -1,14 +1,15 @@
 ---
 name: orchestrate
-description: Start the AI story orchestration pipeline. Feeds stories from a story map into the orchestrator agent, which routes them through TRIAGE → DESIGN → PLAN → BUILD → HARDEN → DELIVER with feedback loops, conflict detection, and human escalation.
-argument-hint: <story map path or story IDs to run>
+description: Execute stories only from a current, named-human-accepted AI architecture. Validate source hashes and scope, then route authorized work through planning, build, hardening, delivery, feedback loops, conflict detection, and human escalation.
 ---
 
 # Orchestrate — Start the AI Pipeline
 
 ## Purpose
 
-Bridge between story decomposition and story execution. After `/decompose` produces a backlog of stories, this skill starts the orchestration pipeline — routing stories through specialized agents in the correct order, managing dependencies, detecting conflicts, and enforcing quality gates.
+Bridge between an accepted architecture and story execution. This skill routes
+already-authorized work through specialized agents, dependencies, and quality
+gates. It never turns a proposed architecture into implementation authority.
 
 Without this skill, stories sit in `.plans/STORIES-AI-*.md` as a static document. With it, they flow through: chief-ai-po (refine) → ai-architect → genai-layoutplan → specialists → validators → demo-builder, with the orchestrator managing state, feedback loops, and human escalation at every step.
 
@@ -30,6 +31,25 @@ The user provides one of:
 - "next" to run the next unblocked story in priority order
 
 ## Workflow
+
+### Step 0: Verify architecture authority
+
+Before loading stories:
+
+1. Read `.north-starr/manifest.json`, intake validation, assessment, and
+   architecture proposal when present.
+2. Recompute or validate referenced source hashes. Any mismatch makes dependent
+   artifacts stale and stops orchestration.
+3. Require architecture `status: accepted` and approval containing a named
+   approver, timestamp, scope, evidence hashes, and residual-risk owner.
+4. Confirm the requested stories fall inside the accepted scope.
+
+If the package is only `proposed`, route to human architecture review. Do not
+append it to `.plans/DECISIONS.md`, decompose it, or initialize the pipeline.
+
+For a legacy project without machine artifacts, state that the evidence and
+approval checks are unavailable and ask for explicit authorization to use the
+legacy path. Do not silently treat an old ADR as accepted.
 
 ### Step 1: Load the Story Map
 
@@ -113,7 +133,7 @@ If over budget, ask: "Estimated cost exceeds budget. Options: (1) Proceed — co
 ### Step 4: Initialize Pipeline
 
 **Actions:**
-1. Create `.plans/DECISIONS.md` if it doesn't exist (append-only architecture decision log)
+1. Create `.plans/DECISIONS.md` if it doesn't exist (append-only log of accepted decisions only)
 2. Create `.plans/LEARNINGS.md` if it doesn't exist (append-only team learnings)
 3. Initialize `.plans/PIPELINE-STATUS.md` with all selected stories in QUEUED state
 4. Set up the shared resource registry in PIPELINE-STATUS.md:
@@ -136,7 +156,7 @@ Spawn the `orchestrator` agent on a separate thread with this context:
 > Decisions: `.plans/DECISIONS.md`
 > Learnings: `.plans/LEARNINGS.md`
 >
-> Start with the first unblocked story. Route through: TRIAGE (chief-ai-po refine) → DESIGN (ai-architect + invert + cost-estimator) → PLAN (genai-layoutplan) → BUILD (use BUILD Dispatch Protocol: parse specialist tags, dispatch with payloads, enforce RAG→Prompt order, track completion) → HARDEN (eval-designer + guardrails-designer + ai-ops — if multiple gates fail, dispatch to different agents in parallel, severity-ranked) → DELIVER (demo-builder).
+> Start with the first unblocked story. Route through: TRIAGE (chief-ai-po refine) → DESIGN only when the accepted architecture needs a scoped revision → HUMAN acceptance for any revision → PLAN (genai-layoutplan) → BUILD (use BUILD Dispatch Protocol: parse specialist tags, dispatch with payloads, enforce RAG→Prompt order, track completion) → HARDEN (eval-designer + guardrails-designer + ai-ops — if multiple gates fail, dispatch independent checks in parallel, severity-ranked) → DELIVER (demo-builder).
 >
 > At each HUMAN escalation, pause and present the escalation payload using the standard format.
 > After each state transition, update PIPELINE-STATUS.md.
